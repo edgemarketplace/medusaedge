@@ -134,8 +134,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // check if the url is a static asset
-  if (request.nextUrl.pathname.includes(".")) {
+  // check if the url is a static asset or a hub page
+  if (
+    request.nextUrl.pathname.includes(".") ||
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/start") ||
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/demo")
+  ) {
     return NextResponse.next()
   }
 
