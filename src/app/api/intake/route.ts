@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { mkdir, appendFile } from "fs/promises"
 import path from "path"
 import { randomUUID } from "crypto"
@@ -141,4 +142,10 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
+=======
+import { handleTenantOnboarding } from "@/lib/intake/onboarding-handler"
+
+export async function POST(req: Request) {
+  return handleTenantOnboarding(req)
+>>>>>>> 2fce45a (Add Supabase SSR integration, intake API, and tenant onboarding persistence)
 }

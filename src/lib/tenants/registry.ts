@@ -1,5 +1,7 @@
-// Mock Tenant Registry for MVP
-// In production, this would be a database call to Medusa/Postgres
+// Tenant Registry for MVP.
+// Uses Supabase when configured, with an in-memory fallback for local demos.
+
+import { insertMarketplaceIntake } from "@/lib/intake/supabase"
 
 export interface Tenant {
   id: string
@@ -45,15 +47,40 @@ export async function getTenantById(id: string): Promise<Tenant | null> {
 }
 
 export async function registerTenant(data: Omit<Tenant, "id" | "status" | "createdAt">): Promise<Tenant> {
-  const newTenant: Tenant = {
+  const fallbackId = `tenant_${Math.random().toString(36).substr(2, 9)}`
+  const createdAt = new Date().toISOString()
+
+  const tenant: Tenant = {
     ...data,
-    id: `tenant_${Math.random().toString(36).substr(2, 9)}`,
+    id: fallbackId,
     status: "preview",
-    createdAt: new Date().toISOString()
+    createdAt,
+  }
+
+  try {
+    const supabaseResult = await insertMarketplaceIntake({
+      businessName: tenant.businessName,
+      ownerEmail: tenant.ownerEmail,
+      subdomain: tenant.subdomain,
+      templateId: tenant.templateId,
+      brandColor: tenant.brandColor,
+      tagline: tenant.tagline,
+      productsText: tenant.productsText,
+      planType: tenant.planType,
+      status: tenant.status,
+      stripeSessionId: tenant.stripeSessionId,
+      paymentStatus: tenant.paymentStatus,
+    })
+
+    if (supabaseResult?.id) {
+      tenant.id = supabaseResult.id
+    }
+  } catch (error) {
+    console.error("Supabase intake persistence failed; using memory fallback", error)
   }
   
-  // For MVP simulation, we push to the local array
-  // This won't persist across restarts in serverless, but works for the current session flow
-  tenants.push(newTenant)
-  return newTenant
+  // Always keep a local in-process copy so preview/demo reads work immediately.
+  // Supabase is the durable source of truth when configured.
+  tenants.push(tenant)
+  return tenant
 }

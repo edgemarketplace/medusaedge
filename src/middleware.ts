@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import { updateSession } from "@/utils/supabase/middleware"
 import { NextRequest, NextResponse } from "next/server"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
@@ -121,7 +122,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/demo") ||
     request.nextUrl.pathname.startsWith("/build")
   ) {
-    return NextResponse.next()
+    return updateSession(request)
   }
 
   const searchParams = request.nextUrl.searchParams
@@ -141,8 +142,12 @@ export async function middleware(request: NextRequest) {
     const subdomain = host.split(".")[0]
     // Rewrite to the internal tenant route
     // We pass the subdomain as the tenantId for now
-    return NextResponse.rewrite(new URL(`/tenant/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+    const response = NextResponse.rewrite(new URL(`/tenant/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+    return updateSession(request, response)
   }
+
+  let response = NextResponse.next()
+  let redirectUrl = `${request.nextUrl.origin}${request.nextUrl.pathname}${request.nextUrl.search}`
 
   // Set a cache id to invalidate the cache for this instance only
   const cacheId = await setCacheId(request, response)
@@ -156,7 +161,7 @@ export async function middleware(request: NextRequest) {
 
   // check if one of the country codes is in the url
   if (urlHasCountryCode && (!cartId || cartIdCookie) && cacheIdCookie) {
-    return NextResponse.next()
+    return updateSession(request, response)
   }
 
   const redirectPath =
@@ -177,7 +182,7 @@ export async function middleware(request: NextRequest) {
     response.cookies.set("_medusa_cart_id", cartId, { maxAge: 60 * 60 * 24 })
   }
 
-  return response
+  return updateSession(request, response)
 }
 
 export const config = {
