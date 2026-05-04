@@ -35,12 +35,13 @@ export default function OnboardingPage() {
     taxIdLast4: "",
     accountNumber: "",
     routingNumber: "",
+    plan: "launch", // launch | pro
   })
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStatus, setLoadingStatus] = useState("Initializing...")
 
   useEffect(() => {
-    if (step === 5) {
+    if (step === 6) {
       const statuses = [
         { progress: 10, msg: "Allocating edge nodes..." },
         { progress: 25, msg: "Initializing secure database cluster..." },
@@ -60,7 +61,7 @@ export default function OnboardingPage() {
           currentIdx++
         } else {
           clearInterval(interval)
-          setTimeout(() => setStep(6), 1000)
+          setTimeout(() => setStep(7), 1000)
         }
       }, 1500)
 
@@ -71,17 +72,38 @@ export default function OnboardingPage() {
   const nextStep = () => setStep((s) => s + 1)
   const prevStep = () => setStep((s) => s - 1)
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setIsSubmitting(true)
-    // Simulate final api call
-    setTimeout(() => {
-      const params = new URLSearchParams({
-        businessName: formData.businessName,
-        brandColor: formData.brandColor,
-        tagline: formData.tagline
+    
+    try {
+      const response = await fetch("/api/tenants/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
       })
-      router.push(`/dashboard?${params.toString()}`)
-    }, 2000)
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Redirect to dashboard with the real tenant data
+        const params = new URLSearchParams({
+          tenantId: data.tenantId,
+          businessName: formData.businessName,
+          brandColor: formData.brandColor,
+          tagline: formData.tagline,
+          subdomain: data.subdomain,
+          previewUrl: data.previewUrl,
+          planType: formData.plan
+        })
+        router.push(`/dashboard?${params.toString()}`)
+      } else {
+        console.error("Onboarding failed:", data.error)
+        setIsSubmitting(false)
+      }
+    } catch (error) {
+      console.error("Onboarding API error:", error)
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -96,7 +118,7 @@ export default function OnboardingPage() {
         <div className="h-1.5 w-full bg-slate-100">
           <div 
             className="h-full bg-blue-600 transition-all duration-500" 
-            style={{ width: `${(step / 6) * 100}%` }}
+            style={{ width: `${(step / 7) * 100}%` }}
           />
         </div>
 
@@ -350,12 +372,83 @@ export default function OnboardingPage() {
 
               <div className="flex gap-4">
                 <Button variant="secondary" className="flex-1 h-12 rounded-xl" onClick={prevStep}>Back</Button>
-                <Button className="flex-[2] h-12 rounded-xl" onClick={nextStep}>Spin Up My Store</Button>
+                <Button className="flex-[2] h-12 rounded-xl" onClick={nextStep}>Choose Your Plan</Button>
               </div>
             </div>
           )}
 
           {step === 5 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-slate-900">Choose your foundation</h1>
+                <p className="mt-2 text-slate-500">Select the plan that matches your business goals.</p>
+              </div>
+
+              <div className="grid gap-6">
+                 <button 
+                   onClick={() => setFormData({...formData, plan: 'launch'})}
+                   className={`p-6 rounded-2xl border-2 text-left transition-all relative overflow-hidden group ${formData.plan === 'launch' ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                 >
+                    <div className="flex justify-between items-start mb-4">
+                       <div>
+                          <h3 className="text-xl font-bold text-slate-900">🚀 Launch</h3>
+                          <p className="text-blue-600 font-bold text-lg mt-1">$0 <span className="text-sm font-normal text-slate-400">/ month</span></p>
+                       </div>
+                       {formData.plan === 'launch' && <CheckCircle2 className="h-6 w-6 text-blue-600" />}
+                    </div>
+                    <ul className="space-y-2 mb-6">
+                       <li className="flex items-center gap-2 text-sm text-slate-600">
+                          <Check className="h-4 w-4 text-blue-500" />
+                          5% transaction fee
+                       </li>
+                       <li className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                          <Check className="h-4 w-4 text-blue-500" />
+                          $5 one-time activation fee
+                       </li>
+                    </ul>
+                    <p className="text-xs text-slate-500 bg-slate-100 p-3 rounded-lg">
+                       "Start selling today with zero upfront risk." <br/>
+                       <span className="italic text-slate-400 mt-1 block">Note: Activation required to go live.</span>
+                    </p>
+                 </button>
+
+                 <button 
+                   onClick={() => setFormData({...formData, plan: 'pro'})}
+                   className={`p-6 rounded-2xl border-2 text-left transition-all relative overflow-hidden group ${formData.plan === 'pro' ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                 >
+                    <div className="flex justify-between items-start mb-4">
+                       <div>
+                          <h3 className="text-xl font-bold text-slate-900">⚡ Pro</h3>
+                          <p className="text-blue-600 font-bold text-lg mt-1">$99 <span className="text-sm font-normal text-slate-400">/ month</span></p>
+                       </div>
+                       {formData.plan === 'pro' && <CheckCircle2 className="h-6 w-6 text-blue-600" />}
+                    </div>
+                    <ul className="space-y-2 mb-6">
+                       <li className="flex items-center gap-2 text-sm text-slate-600">
+                          <Check className="h-4 w-4 text-blue-500" />
+                          1% transaction fee
+                       </li>
+                       <li className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                          <Check className="h-4 w-4 text-blue-500" />
+                          No activation fee
+                       </li>
+                    </ul>
+                    <p className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg">
+                       "Built for serious sellers scaling volume."
+                    </p>
+                 </button>
+              </div>
+
+              <div className="flex gap-4">
+                <Button variant="secondary" className="flex-1 h-12 rounded-xl" onClick={prevStep}>Back</Button>
+                <Button className="flex-[2] h-12 rounded-xl shadow-lg shadow-blue-200" onClick={nextStep}>
+                   {formData.plan === 'pro' ? 'Start Pro Subscription' : 'Continue to Activation'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 6 && (
             <div className="space-y-8 text-center animate-in fade-in duration-500 py-12">
               <div className="relative mx-auto h-32 w-32">
                 <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
@@ -380,7 +473,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 6 && (
+          {step === 7 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3">

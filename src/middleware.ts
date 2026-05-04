@@ -34,6 +34,9 @@ async function getRegionMap(cacheId: string) {
       }
 
       return json
+    }).catch((e) => {
+      console.error("Middleware.ts: Fetch failed for /store/regions. Is Medusa running?", e.message)
+      return { regions: [] }
     })
 
     if (!regions?.length) {
@@ -109,15 +112,37 @@ async function setCacheId(request: NextRequest, response: NextResponse) {
  * Middleware to handle region selection and cache id.
  */
 export async function middleware(request: NextRequest) {
+  // check if the url is a static asset or a hub page
+  if (
+    request.nextUrl.pathname.includes(".") ||
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/start") ||
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/demo") ||
+    request.nextUrl.pathname.startsWith("/build")
+  ) {
+    return NextResponse.next()
+  }
+
   const searchParams = request.nextUrl.searchParams
   const cartId = searchParams.get("cart_id")
   const checkoutStep = searchParams.get("step")
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")
   const cartIdCookie = request.cookies.get("_medusa_cart_id")
 
-  let redirectUrl = request.nextUrl.href
-
-  let response = NextResponse.redirect(redirectUrl, 307)
+  const host = request.headers.get("host") || ""
+  const isLocalhost = host.includes("localhost")
+  const baseDomain = isLocalhost ? "localhost:8000" : "edgemarketplacehub.com"
+  
+  // Check if we are on a subdomain (e.g. jasonsstore.edgemarketplacehub.com)
+  const isSubdomain = host.endsWith(`.${baseDomain}`) && host !== `www.${baseDomain}`
+  
+  if (isSubdomain) {
+    const subdomain = host.split(".")[0]
+    // Rewrite to the internal tenant route
+    // We pass the subdomain as the tenantId for now
+    return NextResponse.rewrite(new URL(`/tenant/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+  }
 
   // Set a cache id to invalidate the cache for this instance only
   const cacheId = await setCacheId(request, response)
@@ -131,17 +156,6 @@ export async function middleware(request: NextRequest) {
 
   // check if one of the country codes is in the url
   if (urlHasCountryCode && (!cartId || cartIdCookie) && cacheIdCookie) {
-    return NextResponse.next()
-  }
-
-  // check if the url is a static asset or a hub page
-  if (
-    request.nextUrl.pathname.includes(".") ||
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/start") ||
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/demo")
-  ) {
     return NextResponse.next()
   }
 
