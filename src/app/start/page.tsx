@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button, Input, Label, Textarea } from "@medusajs/ui"
-import { Check, Loader2, Sparkles, Layout, Store, Palette, Zap, ArrowRight, ArrowLeft, ShieldCheck } from "lucide-react"
+import { Check, CheckCircle2, Loader2, Sparkles, Layout, Store, Palette, Zap, ArrowRight, ArrowLeft, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 
 const productTemplates = [
@@ -407,7 +407,7 @@ export default function OnboardingPage() {
                        </li>
                     </ul>
                     <p className="text-xs text-slate-500 bg-slate-100 p-3 rounded-lg">
-                       "Start selling today with zero upfront risk." <br/>
+                       &quot;Start selling today with zero upfront risk.&quot; <br/>
                        <span className="italic text-slate-400 mt-1 block">Note: Activation required to go live.</span>
                     </p>
                  </button>
@@ -434,7 +434,7 @@ export default function OnboardingPage() {
                        </li>
                     </ul>
                     <p className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg">
-                       "Built for serious sellers scaling volume."
+                       &quot;Built for serious sellers scaling volume.&quot;
                     </p>
                  </button>
               </div>
