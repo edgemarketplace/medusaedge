@@ -127,7 +127,7 @@ export default function AIStudioPage() {
                  Pro Tip
               </h4>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                 You can ask the AI to "Change the hero to be more aggressive" or "Add a 3-column feature list about security."
+                 You can ask the AI to &quot;Change the hero to be more aggressive&quot; or &quot;Add a 3-column feature list about security.&quot;
               </p>
            </div>
         </div>

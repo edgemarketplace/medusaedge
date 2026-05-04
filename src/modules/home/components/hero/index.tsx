@@ -18,27 +18,27 @@ const Hero = () => {
       <div className="absolute inset-0 z-1 flex flex-col justify-center items-center text-center small:p-32 gap-6">
         <span>
           <p className="text-neutral-600 text-xs uppercase">
-            Be light on your feet
+            Launch faster on the edge
           </p>
 
           <Heading
             level="h1"
             className="text-6xl leading-10 text-ui-fg-base font-normal mt-10 mb-5"
           >
-            Portable Bestsellers
+            Edge Marketplace Hub
           </Heading>
 
           <p className="leading-10 text-ui-fg-subtle font-normal text-lg">
-            See our widest selection of electronics
+            AI-assisted storefronts for products, services, and B2B sales
           </p>
         </span>
         <a
-          href="https://github.com/medusajs/b2b-starter-medusa"
+          href="https://github.com/edgemarketplace/medusaedge"
           target="_blank"
         >
           <Button variant="secondary" className="rounded-2xl">
             <Github />
-            Github Repository
+            GitHub Repository
           </Button>
         </a>
       </div>
