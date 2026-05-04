@@ -5,6 +5,7 @@ import SkeletonFeaturedProducts from "@/modules/skeletons/templates/skeleton-fea
 import { Metadata } from "next"
 import { Suspense } from "react"
 
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
 export const metadata: Metadata = {
@@ -13,22 +14,10 @@ export const metadata: Metadata = {
     "A performant frontend ecommerce starter template with Next.js 14 and Medusa.",
 }
 
-export async function generateStaticParams() {
-  const countryCodes = await listRegions().then(
-    (regions) =>
-      regions
-        ?.map((r) => r.countries?.map((c) => c.iso_2))
-        .flat()
-        .filter(Boolean) as string[]
-  )
-  return countryCodes.map((countryCode) => ({ countryCode }))
-}
-
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
   const params = await props.params
-
   const { countryCode } = params
 
   return (

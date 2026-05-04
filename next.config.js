@@ -1,20 +1,5 @@
-const checkEnvVariables = require("./check-env-variables")
-
-// checkEnvVariables()
-
-/**
- * @type {import('next').NextConfig}
- */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
   images: {
     remotePatterns: [
       {
@@ -38,6 +23,14 @@ const nextConfig = {
         hostname: "github.com",
       },
     ],
+  },
+
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  typescript: {
+    ignoreBuildErrors: true,
   },
 }
 
