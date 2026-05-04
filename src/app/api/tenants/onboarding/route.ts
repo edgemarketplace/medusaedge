@@ -24,7 +24,9 @@ export async function POST(req: Request) {
       brandColor: body.brandColor || "#2563eb",
       tagline: body.tagline || "",
       productsText: body.products || "",
-      planType: body.plan || "launch"
+      planType: body.plan || "launch",
+      stripeSessionId: body.stripeSessionId,
+      paymentStatus: body.stripeSessionId ? "paid" : "pending"
     })
 
     return NextResponse.json({

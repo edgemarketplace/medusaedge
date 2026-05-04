@@ -12,6 +12,8 @@ export interface Tenant {
   productsText: string
   planType: "launch" | "pro"
   status: "draft" | "preview" | "live"
+  stripeSessionId?: string
+  paymentStatus?: "pending" | "paid" | "failed"
   createdAt: string
 }
 
