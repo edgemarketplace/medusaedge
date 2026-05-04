@@ -21,9 +21,9 @@ export default function HubNavbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/start">
+          <Link href="/launch-your-marketplace">
             <Button variant="primary" className="rounded-full px-6">
-              Get Started
+              Start Intake
             </Button>
           </Link>
         </div>
