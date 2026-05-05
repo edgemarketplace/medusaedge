@@ -1,12 +1,12 @@
+export const dynamic = "force-dynamic"
+export const dynamicParams = true
+
 import { listRegions } from "@/lib/data/regions"
 import FeaturedProducts from "@/modules/home/components/featured-products"
 import Hero from "@/modules/home/components/hero"
 import SkeletonFeaturedProducts from "@/modules/skeletons/templates/skeleton-featured-products"
 import { Metadata } from "next"
 import { Suspense } from "react"
-
-export const dynamic = "force-dynamic"
-export const dynamicParams = true
 
 export const metadata: Metadata = {
   title: "Medusa Next.js Starter Template",
