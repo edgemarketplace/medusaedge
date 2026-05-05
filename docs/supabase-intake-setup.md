@@ -23,9 +23,14 @@ create table if not exists public.marketplace_intakes (
   tagline text not null default '',
   products_text text not null default '',
   plan_type text not null default 'launch' check (plan_type in ('launch', 'pro')),
-  status text not null default 'preview' check (status in ('draft', 'preview', 'live')),
+  status text not null default 'preview' check (status in ('draft', 'preview', 'live', 'intake_received', 'repo_created', 'config_generated', 'deployment_started', 'preview_live', 'domain_pending', 'failed')),
   stripe_session_id text,
   payment_status text not null default 'pending' check (payment_status in ('pending', 'paid', 'failed')),
+  template_repo text,
+  generated_repo text,
+  vercel_project_id text,
+  preview_url text,
+  production_domain text,
   raw_payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -63,6 +68,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_
 SUPABASE_REST_URL=https://nzxedlagqtzadyrmgkhq.supabase.co/rest/v1
 SUPABASE_INTAKES_TABLE=marketplace_intakes
 SUPABASE_SERVICE_ROLE_KEY=<server-only Supabase service role key>
+GITHUB_TOKEN=<server-only GitHub token with repo/template generation access>
+GITHUB_OWNER=edgemarketplace
+VERCEL_TOKEN=<server-only Vercel token>
+EDGE_MARKETPLACE_BASE_DOMAIN=edgemarketplacehub.com
 ```
 
 Optional only if you choose RLS-based inserts instead of service-role server inserts:
@@ -90,7 +99,50 @@ The handler:
 4. falls back to in-memory storage if Supabase is not configured or errors
 5. returns the tenant ID, subdomain, preview URL, and dashboard URL
 
-## 5. Quick verification curl
+## 5. Domain automation
+
+Provisioning now attaches the generated marketplace to a wildcard-backed Vercel domain after the Vercel project is created.
+
+One-time DNS requirement in Cloudflare:
+
+```dns
+*.edgemarketplacehub.com CNAME cname.vercel-dns.com
+```
+
+Provisioning flow:
+
+```text
+GitHub template repo -> marketplace-* repo
+-> Vercel project import
+-> POST /v10/projects/{projectId}/domains
+-> https://{subdomain}.edgemarketplacehub.com
+```
+
+The helper lives in:
+
+```text
+src/lib/provision/vercel.js
+```
+
+It calls:
+
+```http
+POST https://api.vercel.com/v10/projects/{projectId}/domains
+```
+
+with:
+
+```json
+{ "name": "customer.edgemarketplacehub.com" }
+```
+
+Run the guardrail test after editing provisioning/domain code:
+
+```bash
+npm run test:provision-domain
+```
+
+## 6. Quick verification curl
 
 After env vars are set in a deployed environment:
 

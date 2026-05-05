@@ -13,7 +13,9 @@
     "build": "next build",
     "start": "next start -p 8000",
     "lint": "next lint",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "test:no-generate-static-params": "node tests/no-generate-static-params.test.mjs",
+    "test:provision-domain": "node tests/provision-domain.test.mjs"
   },
   "resolutions": {
     "webpack": "^5",
