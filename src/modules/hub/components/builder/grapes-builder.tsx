@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import type grapesjs from "grapesjs"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
 import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
+import { ecommerceTemplates } from "@/lib/grapes/ecommerce-templates"
 import type { BlockDef } from "@/lib/grapes/blocks"
 import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2 } from "lucide-react"
 import Link from "next/link"
@@ -42,6 +43,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   const [deploying, setDeploying] = useState(false)
   const [validation, setValidation] = useState({ hasHeader: false, hasHero: false, hasFooter: false })
   const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
+  const [sidebarMode, setSidebarMode] = useState<"templates" | "blocks">("templates")
   const [openCat, setOpenCat] = useState<string | null>("Header")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
@@ -218,6 +220,27 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   }, [device])
 
   /* ── actions ── */
+
+  const handleApplyTemplate = useCallback((templateId: string) => {
+    const editor = gjsRef.current
+    if (!editor) return
+    const template = ecommerceTemplates.find((item) => item.id === templateId)
+    if (!template) return
+
+    const ok = window.confirm(
+      `Start with ${template.name}? This replaces the current canvas. Save your draft first if you want to keep it.`
+    )
+    if (!ok) return
+
+    editor.setComponents(template.content)
+    editor.setStyle("")
+    editor.select(null as any)
+    setSelectedId(null)
+    setSelectedMedia(null)
+    editor.trigger("component:update")
+    editor.refresh()
+  }, [])
+
   const handleAddBlock = useCallback((block: BlockDef) => {
     const editor = gjsRef.current
     if (!editor) return
@@ -326,50 +349,96 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
           <span className="text-[10px] text-slate-500 font-mono">{projectId.slice(0, 12)}…</span>
         </div>
 
-        {/* Categories */}
+        {/* Templates / Blocks */}
+        <div className="border-b border-slate-800 p-3">
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-900 p-1">
+            <button
+              data-testid="template-tab"
+              onClick={() => setSidebarMode("templates")}
+              className={clsx("rounded-lg px-3 py-2 text-xs font-bold transition", sidebarMode === "templates" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}
+            >
+              Templates
+            </button>
+            <button
+              data-testid="blocks-tab"
+              onClick={() => setSidebarMode("blocks")}
+              className={clsx("rounded-lg px-3 py-2 text-xs font-bold transition", sidebarMode === "blocks" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}
+            >
+              Blocks
+            </button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto">
-          {grouped.map(({ cat, blocks }) => {
-            const isOpen = openCat === cat.name
-            const meta = catMeta[cat.name] || { icon: "■", color: "text-slate-400" }
-            return (
-              <div key={cat.name} className="border-b border-slate-800 last:border-b-0">
-                <button
-                  onClick={() => setOpenCat(isOpen ? null : cat.name)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-900 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={clsx("text-sm font-bold", meta.color)}>{meta.icon}</span>
-                    <span className="text-xs font-medium text-slate-300">{cat.name}</span>
-                    <span className="text-[10px] text-slate-600 bg-slate-900 px-1.5 py-0.5 rounded">
-                      {blocks.length}
-                    </span>
-                  </div>
-                  <span className={clsx("text-slate-500 text-xs transition-transform", isOpen ? "rotate-90" : "")}>
-                    ▶
-                  </span>
-                </button>
-                {isOpen && (
-                  <div className="px-3 pb-3 grid grid-cols-1 gap-2">
-                    {blocks.map((block) => (
-                      <button
-                        key={block.id}
-                        onClick={() => handleAddBlock(block)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-600 hover:bg-slate-800 transition group text-left"
-                      >
-                        <div className="w-8 h-8 rounded bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-slate-500 transition">
-                          <Plus className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-slate-200 truncate">{block.label}</p>
-                          <p className="text-[10px] text-slate-500 truncate">{cat.name}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+          {sidebarMode === "templates" ? (
+            <div className="space-y-3 p-3">
+              <div className="rounded-xl border border-blue-500/30 bg-blue-950/30 p-3">
+                <p className="text-xs font-black text-white">Start with Template</p>
+                <p className="mt-1 text-[10px] leading-4 text-slate-400">Choose an ecommerce-inspired starting point, then switch to Blocks to update sections, images, video, embeds, text, and CTAs.</p>
               </div>
-            )
-          })}
+              {ecommerceTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => handleApplyTemplate(template.id)}
+                  className="group w-full rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-blue-500 hover:bg-slate-800"
+                >
+                  <div className={clsx("mb-3 h-2 rounded-full bg-gradient-to-r", template.accent)} />
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-100">{template.name}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">{template.source}</p>
+                    </div>
+                    <Plus className="h-4 w-4 text-slate-500 group-hover:text-blue-300" />
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-400">{template.description}</p>
+                  <p className="mt-2 rounded-lg bg-slate-950 px-2 py-1.5 text-[10px] leading-4 text-slate-500">Best for: {template.bestFor}</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            grouped.map(({ cat, blocks }) => {
+              const isOpen = openCat === cat.name
+              const meta = catMeta[cat.name] || { icon: "■", color: "text-slate-400" }
+              return (
+                <div key={cat.name} className="border-b border-slate-800 last:border-b-0">
+                  <button
+                    onClick={() => setOpenCat(isOpen ? null : cat.name)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-900 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={clsx("text-sm font-bold", meta.color)}>{meta.icon}</span>
+                      <span className="text-xs font-medium text-slate-300">{cat.name}</span>
+                      <span className="text-[10px] text-slate-600 bg-slate-900 px-1.5 py-0.5 rounded">
+                        {blocks.length}
+                      </span>
+                    </div>
+                    <span className={clsx("text-slate-500 text-xs transition-transform", isOpen ? "rotate-90" : "")}>
+                      ▶
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="px-3 pb-3 grid grid-cols-1 gap-2">
+                      {blocks.map((block) => (
+                        <button
+                          key={block.id}
+                          onClick={() => handleAddBlock(block)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-600 hover:bg-slate-800 transition group text-left"
+                        >
+                          <div className="w-8 h-8 rounded bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-slate-500 transition">
+                            <Plus className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-slate-200 truncate">{block.label}</p>
+                            <p className="text-[10px] text-slate-500 truncate">{cat.name}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
 
         {/* Selected controls */}
