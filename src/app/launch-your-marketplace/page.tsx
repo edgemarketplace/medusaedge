@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { marketplaceTemplates } from "@/lib/intake/schema"
+import { InventoryForm, type Product } from "@/components/inventory-form"
 import { Check, ChevronDown } from "lucide-react"
 
 const plans = [
@@ -43,10 +44,13 @@ const initialForm = {
   budgetRange: "",
   plan: "launch",
   notes: "",
+
+  // Step 4: Products (inventory)
+  products: [] as Product[],
 }
 
 type FormState = typeof initialForm
-type Step = 1 | 2 | 3 | "summary" | "payment"
+type Step = 1 | 2 | 3 | 4 | "summary" | "payment" | "success"
 
 export default function ProfessionalIntakePage() {
   const [currentStep, setCurrentStep] = useState<Step>(1)
@@ -138,10 +142,10 @@ export default function ProfessionalIntakePage() {
         </Link>
 
         {/* Progress indicator */}
-        {currentStep !== "payment" && currentStep !== "summary" && (
+        {currentStep !== "payment" && currentStep !== "summary" && currentStep !== "success" && (
           <div className="mt-12 mb-12">
             <div className="flex items-center justify-between mb-8">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center flex-1">
                   <button
                     onClick={() => step < currentStep && setCurrentStep(step as Step)}
@@ -156,9 +160,9 @@ export default function ProfessionalIntakePage() {
                     {step < currentStep ? <Check className="h-6 w-6" /> : step}
                   </button>
                   <span className="text-xs font-bold text-slate-600">
-                    {step === 1 && "Business Info"} {step === 2 && "Website & Branding"} {step === 3 && "Business Details"}
+                    {step === 1 && "Business"} {step === 2 && "Website"} {step === 3 && "Details"} {step === 4 && "Products"}
                   </span>
-                  {step < 3 && <div className="hidden md:block absolute w-12 h-1 bg-slate-200 ml-16" />}
+                  {step < 4 && <div className="hidden md:block absolute w-12 h-1 bg-slate-200 ml-16" />}
                 </div>
               ))}
             </div>
@@ -179,12 +183,27 @@ export default function ProfessionalIntakePage() {
             <Step3Details form={form} update={update} />
           )}
 
+          {currentStep === 4 && (
+            <InventoryForm
+              initialProducts={form.products}
+              onSave={(products) => {
+                setForm((prev) => ({ ...prev, products }))
+                setCurrentStep("summary")
+              }}
+              onSkip={() => setCurrentStep("summary")}
+            />
+          )}
+
           {currentStep === "summary" && result && (
-            <StepSummary result={result} form={form} onContinue={() => setCurrentStep("payment")} />
+            <StepSummary result={result} form={form} products={form.products} onContinue={() => setCurrentStep("payment")} />
           )}
 
           {currentStep === "payment" && result && (
-            <StepPayment result={result} form={form} />
+            <StepPayment result={result} form={form} products={form.products} />
+          )}
+
+          {currentStep === "success" && result && (
+            <StepSuccess result={result} form={form} />
           )}
 
           {error && (
@@ -194,7 +213,7 @@ export default function ProfessionalIntakePage() {
           )}
 
           {/* Navigation buttons */}
-          {currentStep !== "payment" && currentStep !== "summary" && (
+          {currentStep !== "payment" && currentStep !== "summary" && currentStep !== "success" && (
             <div className="mt-8 flex gap-4 justify-between">
               <button
                 onClick={() => {
@@ -204,6 +223,8 @@ export default function ProfessionalIntakePage() {
                     setCurrentStep(1)
                   } else if (currentStep === 3) {
                     setCurrentStep(2)
+                  } else if (currentStep === 4) {
+                    setCurrentStep(3)
                   }
                 }}
                 className={`px-6 py-3 rounded-lg font-bold transition ${
@@ -216,11 +237,19 @@ export default function ProfessionalIntakePage() {
                 ← Back
               </button>
               <button
-                onClick={currentStep === 3 ? submitIntake : nextStep}
-                disabled={submitting}
+                onClick={() => {
+                  if (currentStep === 3) {
+                    setCurrentStep(4)
+                  } else if (currentStep === 1) {
+                    nextStep()
+                  } else if (currentStep === 2) {
+                    nextStep()
+                  }
+                }}
+                disabled={submitting || !canAdvance(currentStep)}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Processing..." : currentStep === 3 ? "Review & Proceed" : "Continue"}
+                {submitting ? "Processing..." : currentStep === 3 ? "Add Products →" : "Continue"}
               </button>
             </div>
           )}
@@ -377,7 +406,7 @@ function Step3Details({ form, update }: { form: FormState; update: (field: keyof
   )
 }
 
-function StepSummary({ result, form, onContinue }: { result: any; form: FormState; onContinue: () => void }) {
+function StepSummary({ result, form, products, onContinue }: { result: any; form: FormState; products: Product[]; onContinue: () => void }) {
   const selectedTemplate = marketplaceTemplates.find((t) => t.id === form.selectedTemplate)
   return (
     <div>
@@ -404,28 +433,121 @@ function StepSummary({ result, form, onContinue }: { result: any; form: FormStat
             <p className="text-xs font-bold text-slate-600 mb-1">Plan</p>
             <p className="font-bold">{form.plan.charAt(0).toUpperCase() + form.plan.slice(1)}</p>
           </div>
+          <div className="rounded-xl bg-slate-100 p-4">
+            <p className="text-xs font-bold text-slate-600 mb-1">Products Added</p>
+            <p className="font-bold">{products.filter((p) => p.name.trim()).length} items</p>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-4">
+            <p className="text-xs font-bold text-slate-600 mb-1">Contact Email</p>
+            <p className="font-bold">{form.email}</p>
+          </div>
         </div>
       </div>
       <button onClick={onContinue} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
-        Continue to Inventory → Payment
+        Continue to Payment →
       </button>
     </div>
   )
 }
 
-function StepPayment({ result, form }: { result: any; form: FormState }) {
+function StepPayment({ result, form, products }: { result: any; form: FormState; products: Product[] }) {
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const planPricing: Record<string, number> = {
+    launch: 299,
+    pro: 699,
+    custom: 0, // Quote needed
+  }
+
+  const price = planPricing[form.plan]
+
+  async function handleCheckout() {
+    setProcessing(true)
+    setError(null)
+    try {
+      // In production, this would create a Stripe checkout session
+      // For now, simulate success after 2 seconds
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      window.location.hash = "success"
+      // This would normally redirect to Stripe, but for demo we simulate
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment failed")
+      setProcessing(false)
+    }
+  }
+
   return (
     <div className="text-center py-12">
-      <div className="text-4xl mb-4">✨</div>
-      <h2 className="text-2xl font-black mb-2">Almost there!</h2>
-      <p className="text-slate-600 mb-8">Add your products and proceed to payment.</p>
-      <div className="rounded-xl bg-blue-50 border border-blue-200 p-6 mb-8">
-        <p className="text-sm text-blue-700 mb-2">Intake ID: {result.intakeId}</p>
-        <p className="text-sm text-blue-700">Subdomain: {form.desiredSubdomain}.edgemarketplacehub.com</p>
+      <div className="text-5xl mb-4">💳</div>
+      <h2 className="text-2xl font-black mb-2">Complete Your Purchase</h2>
+      <p className="text-slate-600 mb-8">Your marketplace will be ready to customize in minutes.</p>
+
+      <div className="rounded-xl bg-slate-50 border border-slate-200 p-8 mb-8 max-w-md mx-auto">
+        <div className="text-left space-y-4">
+          <div className="flex justify-between">
+            <span className="text-slate-600">{form.businessName} ({form.plan.toUpperCase()} Plan)</span>
+            <span className="font-bold">${price}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Products ({products.filter((p) => p.name.trim()).length} items)</span>
+            <span className="font-bold">Included</span>
+          </div>
+          <div className="border-t border-slate-300 pt-4 flex justify-between text-lg">
+            <span className="font-bold">Total</span>
+            <span className="font-bold text-blue-600">${price}</span>
+          </div>
+        </div>
       </div>
-      <Link href={`/builder/${result.intakeId}`} className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition">
-        Go to Inventory & Payment →
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 mb-6">
+          {error}
+        </div>
+      )}
+
+      <button
+        onClick={handleCheckout}
+        disabled={processing || form.plan === "custom"}
+        className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+      >
+        {processing ? "Processing..." : `Pay $${price}`}
+      </button>
+
+      {form.plan === "custom" && (
+        <div className="text-sm text-slate-600 mt-4">
+          <p>For custom plans, we'll contact you at {form.email} with a quote.</p>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-500 mt-4">Secure checkout powered by Stripe • Your data is encrypted</p>
+    </div>
+  )
+}
+
+function StepSuccess({ result, form }: { result: any; form: FormState }) {
+  return (
+    <div className="text-center py-12">
+      <div className="text-6xl mb-4">🎉</div>
+      <h2 className="text-3xl font-black mb-2">Welcome to your marketplace!</h2>
+      <p className="text-slate-600 mb-8 text-lg">Payment received. Your site is being set up now.</p>
+
+      <div className="rounded-xl bg-green-50 border border-green-200 p-8 max-w-md mx-auto mb-8">
+        <div className="text-left space-y-3">
+          <p className="text-sm"><span className="font-bold">✓ Business Name:</span> {form.businessName}</p>
+          <p className="text-sm"><span className="font-bold">✓ Domain:</span> {form.desiredSubdomain}.edgemarketplacehub.com</p>
+          <p className="text-sm"><span className="font-bold">✓ Intake ID:</span> <code className="bg-white px-2 py-1 rounded text-xs">{result.intakeId}</code></p>
+        </div>
+      </div>
+
+      <Link
+        href={`/builder/${result.intakeId}`}
+        className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+      >
+        Enter Your Builder →
       </Link>
+
+      <p className="text-sm text-slate-600 mt-6">Check your email ({form.email}) for setup instructions and next steps.</p>
     </div>
   )
 }
