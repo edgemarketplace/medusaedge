@@ -1356,6 +1356,14 @@
   resolved "https://registry.npmjs.org/@tanstack/virtual-core/-/virtual-core-3.14.0.tgz"
   integrity sha512-JLANqGy/D6k4Ujmh8Tr25lGimuOXNiaVyXaCAZS0W+1390sADdGnyUdSWNIfd49gebtIxGMij4IktRVzrdr12Q==
 
+"@types/backbone@1.4.15":
+  version "1.4.15"
+  resolved "https://registry.npmjs.org/@types/backbone/-/backbone-1.4.15.tgz"
+  integrity sha512-WWeKtYlsIMtDyLbbhkb96taJMEbfQBnuz7yw1u0pkphCOtksemoWhIXhK74VRCY9hbjnsH3rsJu2uUiFtnsEYg==
+  dependencies:
+    "@types/jquery" "*"
+    "@types/underscore" "*"
+
 "@types/debug@^4.0.0":
   version "4.1.13"
   resolved "https://registry.npmjs.org/@types/debug/-/debug-4.1.13.tgz"
@@ -1397,6 +1405,11 @@
   integrity sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==
   dependencies:
     "@types/unist" "*"
+
+"@types/jquery@*":
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/@types/jquery/-/jquery-4.0.0.tgz"
+  integrity sha512-Z+to+A2VkaHq1DfI2oSwsoCdhCHMpTSgjWzNcbNlRGYzksDBpPUgEcAL+RQjOBJRaLoEAOHXxqDGBVP+BblBwg==
 
 "@types/json-schema@*", "@types/json-schema@^7.0.15", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.9":
   version "7.0.15"
@@ -1457,6 +1470,16 @@
   integrity sha512-RshndUfqTW6K3STLPis8BtAYCGOkMbtvYsi90gmVNDZBXUyUc5juf2PE9LfS/JmOlUIRO8cWTS/1MTnmhjDqyQ==
   dependencies:
     csstype "^3.0.2"
+
+"@types/sortablejs@^1.15.9":
+  version "1.15.9"
+  resolved "https://registry.npmjs.org/@types/sortablejs/-/sortablejs-1.15.9.tgz"
+  integrity sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==
+
+"@types/underscore@*":
+  version "1.13.0"
+  resolved "https://registry.npmjs.org/@types/underscore/-/underscore-1.13.0.tgz"
+  integrity sha512-L6LBgy1f0EFQZ+7uSA57+n2g/s4Qs5r06Vwrwn0/nuK1de+adz00NWaztRQ30aEqw5qOaWbPI8u2cGQ52lj6VA==
 
 "@types/unist@*", "@types/unist@^3.0.0":
   version "3.0.3"
@@ -1982,6 +2005,21 @@ babel-loader@^8.2.3:
     make-dir "^3.1.0"
     schema-utils "^2.6.5"
 
+backbone-undo@0.2.6:
+  version "0.2.6"
+  resolved "https://registry.npmjs.org/backbone-undo/-/backbone-undo-0.2.6.tgz"
+  integrity sha512-AsfpNiljLXlk7TcffDUu3EAUq7CxWbyTNwARWrql5XTzN4vh6WzEEBZYaKK4kTTz+iW1tSzqUooaGRIwO83kWA==
+  dependencies:
+    backbone ">=1.0.0"
+    underscore ">=1.4.4"
+
+backbone@>=1.0.0, backbone@1.4.1:
+  version "1.4.1"
+  resolved "https://registry.npmjs.org/backbone/-/backbone-1.4.1.tgz"
+  integrity sha512-ADy1ztN074YkWbHi8ojJVFe3vAanO/lrzMGZWUClIP7oDD/Pjy2vrASraUP+2EVCfIiTtCW4FChVow01XneivA==
+  dependencies:
+    underscore ">=1.8.3"
+
 bail@^2.0.0:
   version "2.0.2"
   resolved "https://registry.npmjs.org/bail/-/bail-2.0.2.tgz"
@@ -2159,7 +2197,7 @@ clsx@^1.2.1:
   resolved "https://registry.npmjs.org/clsx/-/clsx-1.2.1.tgz"
   integrity sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==
 
-clsx@^2.0.0:
+clsx@^2.0.0, clsx@^2.1.1:
   version "2.1.1"
   resolved "https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz"
   integrity sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==
@@ -2168,6 +2206,16 @@ clsx@2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/clsx/-/clsx-2.0.0.tgz"
   integrity sha512-rQ1+kcj+ttHG0MKVGBUXwayCCF1oh39BF5COIpRzuCEv8Mwjv0XucrI2ExNTOn9IlLifGClWQcU9BrZORvtw6Q==
+
+codemirror-formatting@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/codemirror-formatting/-/codemirror-formatting-1.0.0.tgz"
+  integrity sha512-br9yM6eJI3pJHekEnoyHaBEb1B7XxxDjju+vRyBe8QGLp5saTIXXkZ+eFCTqXSAtI8QEZDFVEX2/SOjH2sVWRQ==
+
+codemirror@5.63.0:
+  version "5.63.0"
+  resolved "https://registry.npmjs.org/codemirror/-/codemirror-5.63.0.tgz"
+  integrity sha512-KlLWRPggDg2rBD1Mx7/EqEhaBdy+ybBCVh/efgjBDsPpMeEu6MbTAJzIT4TuCzvmbTEgvKOGzVT6wdBTNusqrg==
 
 color-convert@^2.0.1:
   version "2.0.1"
@@ -3060,6 +3108,20 @@ graceful-fs@^4.1.2, graceful-fs@^4.2.11, graceful-fs@^4.2.4:
   resolved "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz"
   integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
 
+grapesjs@^0.22.16:
+  version "0.22.16"
+  resolved "https://registry.npmjs.org/grapesjs/-/grapesjs-0.22.16.tgz"
+  integrity sha512-kCfphgpC7pqJPuMYmIhMR6ueyB3+V67isdpMZOvmuGeWDMomkgzqRWOMH3matfdqIJW7LUivHZo9GeyVQAGmLw==
+  dependencies:
+    "@types/backbone" "1.4.15"
+    backbone "1.4.1"
+    backbone-undo "0.2.6"
+    codemirror "5.63.0"
+    codemirror-formatting "1.0.0"
+    html-entities "~1.4.0"
+    promise-polyfill "8.3.0"
+    underscore "1.13.8"
+
 graphemer@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/graphemer/-/graphemer-1.4.0.tgz"
@@ -3140,6 +3202,11 @@ hi-base32@^0.5.0:
   version "0.5.1"
   resolved "https://registry.npmjs.org/hi-base32/-/hi-base32-0.5.1.tgz"
   integrity sha512-EmBBpvdYh/4XxsnUybsPag6VikPYnN30td+vQk+GI3qpahVEG9+gTkG0aXVxTjBqQ5T6ijbWIu77O+C5WFWsnA==
+
+html-entities@~1.4.0:
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/html-entities/-/html-entities-1.4.0.tgz"
+  integrity sha512-8nxjcBcd8wovbeKx7h3wTji4e6+rhaVuPNpMqwWgnHh+N9ToqsCs6XztWRBPQ+UtzsoMAdKZtUENoVzU/EMtZA==
 
 html-url-attributes@^3.0.0:
   version "3.0.1"
@@ -4429,7 +4496,7 @@ prismjs@^1.29.0:
   resolved "https://registry.npmjs.org/prismjs/-/prismjs-1.30.0.tgz"
   integrity sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==
 
-promise-polyfill@^8.3.0:
+promise-polyfill@^8.3.0, promise-polyfill@8.3.0:
   version "8.3.0"
   resolved "https://registry.npmjs.org/promise-polyfill/-/promise-polyfill-8.3.0.tgz"
   integrity sha512-H5oELycFml5yto/atYqmjyigJoAo3+OXwolYiH7OfQuYlAqhxNvTfiNMbV9hsC6Yp83yE5r2KTVmtrG6R9i6Pg==
@@ -4960,6 +5027,11 @@ sonner@^1.5.0:
   resolved "https://registry.npmjs.org/sonner/-/sonner-1.7.4.tgz"
   integrity sha512-DIS8z4PfJRbIyfVFDVnK9rO3eYDtse4Omcm6bt0oEr5/jtLgysmjuBl1frJ9E/EQZrFmKx2A8m/s5s9CRXIzhw==
 
+sortablejs@^1.15.7:
+  version "1.15.7"
+  resolved "https://registry.npmjs.org/sortablejs/-/sortablejs-1.15.7.tgz"
+  integrity sha512-Kk8wLQPlS+yi1ZEf48a4+fzHa4yxjC30M/Sr2AnQu+f/MPwvvX9XjZ6OWejiz8crBsLwSq8GHqaxaET7u6ux0A==
+
 source-map-js@^1.0.2, source-map-js@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz"
@@ -5365,6 +5437,11 @@ unbox-primitive@^1.1.0:
     has-bigints "^1.0.2"
     has-symbols "^1.1.0"
     which-boxed-primitive "^1.1.1"
+
+underscore@>=1.4.4, underscore@>=1.8.3, underscore@1.13.8:
+  version "1.13.8"
+  resolved "https://registry.npmjs.org/underscore/-/underscore-1.13.8.tgz"
+  integrity sha512-DXtD3ZtEQzc7M8m4cXotyHR+FAS18C64asBYY5vqZexfYryNNnDc02W4hKg3rdQuqOYas1jkseX0+nZXjTXnvQ==
 
 unified@^11.0.0:
   version "11.0.5"

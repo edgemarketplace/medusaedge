@@ -58,3 +58,5 @@ dump.rdb
 .env
 node_modules
 .next
+# Generated marketplace output
+marketplace-*/
