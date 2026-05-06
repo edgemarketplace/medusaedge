@@ -5,7 +5,7 @@ import type grapesjs from "grapesjs"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
 import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
 import type { BlockDef } from "@/lib/grapes/blocks"
-import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone } from "lucide-react"
+import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2 } from "lucide-react"
 import Link from "next/link"
 import clsx from "clsx"
 
@@ -15,6 +15,14 @@ export interface GrapesBuilderProps {
   onSaveDraft?: (projectJson: object) => Promise<void>
   onDeploy?: (projectJson: object) => Promise<void>
 }
+
+type SelectedMedia = {
+  id: string
+  kind: "image" | "video" | "iframe" | "embed"
+  label: string
+  value: string
+  placeholder: string
+} | null
 
 const catMeta: Record<string, { icon: string; color: string }> = {
   Header: { icon: "⊤", color: "text-indigo-400" },
@@ -36,6 +44,53 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
   const [openCat, setOpenCat] = useState<string | null>("Header")
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
+
+  const readSelectedMedia = useCallback((component: any): SelectedMedia => {
+    if (!component) return null
+    const attrs = component.getAttributes?.() || {}
+    const tagName = String(component.get?.("tagName") || "").toLowerCase()
+    const kindAttr = attrs["data-builder-kind"]
+    const kind = kindAttr || (tagName === "img" ? "image" : tagName === "iframe" ? "iframe" : tagName === "video" ? "video" : null)
+
+    if (!kind) return null
+
+    if (kind === "embed") {
+      const html = component.components?.().map((child: any) => child.toHTML?.() || "").join("") || component.get?.("content") || ""
+      return {
+        id: component.getId?.() || component.cid,
+        kind: "embed",
+        label: "Embed HTML",
+        value: html,
+        placeholder: '<iframe src="https://calendly.com/your-link" class="w-full h-[640px]"></iframe>',
+      }
+    }
+
+    const mediaKind = kind === "image" ? "image" : kind === "video" ? "video" : "iframe"
+    return {
+      id: component.getId?.() || component.cid,
+      kind: mediaKind,
+      label: mediaKind === "image" ? "Image URL" : "Video / iframe URL",
+      value: attrs.src || "",
+      placeholder: mediaKind === "image" ? "https://example.com/photo.jpg" : "https://www.youtube.com/embed/...",
+    }
+  }, [])
+
+  const applySelectedMediaValue = useCallback(() => {
+    const editor = gjsRef.current
+    const selected = editor?.getSelected() as any
+    if (!editor || !selected || !selectedMedia) return
+
+    if (selectedMedia.kind === "embed") {
+      selected.components(selectedMedia.value || '<p class="text-gray-500">Embed HTML goes here</p>')
+    } else {
+      selected.addAttributes({ src: selectedMedia.value })
+    }
+
+    selected.view?.render?.()
+    editor.trigger("component:update", selected)
+    editor.refresh()
+  }, [selectedMedia])
 
   /* ── init GrapesJS ── */
   useEffect(() => {
@@ -101,8 +156,15 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
       // Track selected component
       editor.on("component:selected", (c: any) => {
         setSelectedId(c?.getId?.() || null)
+        setSelectedMedia(readSelectedMedia(c))
       })
-      editor.on("component:deselected", () => setSelectedId(null))
+      editor.on("component:deselected", () => {
+        setSelectedId(null)
+        setSelectedMedia(null)
+      })
+      editor.on("component:update", (c: any) => {
+        if (editor.getSelected() === c) setSelectedMedia(readSelectedMedia(c))
+      })
 
       // Validation
       const validate = () => {
@@ -147,7 +209,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
         gjsRef.current = null
       }
     }
-  }, [projectId])
+  }, [projectId, readSelectedMedia])
 
   /* ── device toggle ── */
   useEffect(() => {
@@ -213,10 +275,18 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
     if (!gjsRef.current) return
     const html = gjsRef.current.getHtml()
     const css = gjsRef.current.getCss()
-    const blob = new Blob(
-      [`<!DOCTYPE html><html><head><style>${css}</style></head><body>${html}</body></html>`],
-      { type: "text/html" }
-    )
+    const previewHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charSet="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marketplace Preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <style>body{margin:0;background:#fff;} iframe{max-width:100%;} ${css}</style>
+</head>
+<body>${html}</body>
+</html>`
+    const blob = new Blob([previewHtml], { type: "text/html" })
     const url = URL.createObjectURL(blob)
     window.open(url, "_blank")
   }, [])
@@ -334,6 +404,39 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
                 Remove
               </button>
             </div>
+
+            {selectedMedia && (
+              <div data-testid="media-editor-panel" className="mt-3 space-y-2 rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-slate-500">
+                  {selectedMedia.kind === "image" ? <ImageIcon className="h-3 w-3" /> : <Code2 className="h-3 w-3" />}
+                  {selectedMedia.label}
+                </div>
+                {selectedMedia.kind === "embed" ? (
+                  <textarea
+                    value={selectedMedia.value}
+                    onChange={(event) => setSelectedMedia({ ...selectedMedia, value: event.target.value })}
+                    placeholder={selectedMedia.placeholder}
+                    className="h-24 w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 font-mono text-[11px] text-slate-100 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <input
+                    value={selectedMedia.value}
+                    onChange={(event) => setSelectedMedia({ ...selectedMedia, value: event.target.value })}
+                    placeholder={selectedMedia.placeholder}
+                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-[11px] text-slate-100 outline-none focus:border-blue-500"
+                  />
+                )}
+                <button
+                  onClick={applySelectedMediaValue}
+                  className="w-full rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-500"
+                >
+                  Apply media / embed update
+                </button>
+                <p className="text-[10px] leading-4 text-slate-500">
+                  Select an image, video iframe, calendar, or embed area on the canvas, paste the URL or HTML, then apply.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
