@@ -15,6 +15,7 @@ export default function HubNavbar() {
         </div>
         
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+          <Link href="/builder" className="hover:text-blue-600 transition-colors">Builder</Link>
           <Link href="#templates" className="hover:text-blue-600 transition-colors">Templates</Link>
           <Link href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
           <Link href="#about" className="hover:text-blue-600 transition-colors">About</Link>

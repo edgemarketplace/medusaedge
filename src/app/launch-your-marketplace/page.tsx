@@ -116,14 +116,22 @@ export default function MarketplaceIntakePage() {
               <div className="rounded-3xl border border-green-200 bg-green-50 p-6">
                 <p className="text-sm font-black uppercase tracking-[0.25em] text-green-700">Intake received</p>
                 <h2 className="mt-3 text-3xl font-black">Bridge record created.</h2>
-                <dl className="mt-6 space-y-3 text-sm">
-                  <div><dt className="font-bold">Intake ID</dt><dd className="break-all text-slate-700">{result.intakeId}</dd></div>
-                  <div><dt className="font-bold">Template repo</dt><dd className="break-all text-slate-700">{result.selectedTemplateRepo}</dd></div>
-                  <div><dt className="font-bold">Suggested subdomain</dt><dd className="text-slate-700">{result.preferredSubdomain}.edgemarketplacehub.com</dd></div>
-                </dl>
-                <button onClick={() => setResult(null)} className="mt-6 rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
+              <dl className="mt-6 space-y-3 text-sm">
+                <div><dt className="font-bold">Intake ID</dt><dd className="break-all text-slate-700">{result.intakeId}</dd></div>
+                <div><dt className="font-bold">Template repo</dt><dd className="break-all text-slate-700">{result.selectedTemplateRepo}</dd></div>
+                <div><dt className="font-bold">Suggested subdomain</dt><dd className="text-slate-700">{result.preferredSubdomain}.edgemarketplacehub.com</dd></div>
+              </dl>
+              <div className="mt-8 space-y-3">
+                <a
+                  href={`/builder/${result.intakeId}`}
+                  className="block w-full rounded-full bg-blue-600 px-5 py-3 text-center text-sm font-bold text-white shadow-lg hover:bg-blue-700 transition"
+                >
+                  → Design Your Website
+                </a>
+                <button onClick={() => setResult(null)} className="block w-full rounded-full bg-slate-950 px-5 py-3 text-sm font-bold text-white">
                   Submit another intake
                 </button>
+              </div>
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-8">
