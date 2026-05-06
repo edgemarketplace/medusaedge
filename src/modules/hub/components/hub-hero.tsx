@@ -34,7 +34,7 @@ export default function HubHero() {
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link href="/start">
               <Button size="large" className="rounded-full px-8 h-14 text-lg">
-                Start My 15-Minute Launch
+                🚀 Launch My Store
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -48,8 +48,8 @@ export default function HubHero() {
         <div className="mt-20 relative animate-in fade-in zoom-in duration-1000 delay-300">
           <div className="relative mx-auto max-w-5xl rounded-3xl bg-slate-900/5 p-2 ring-1 ring-inset ring-slate-900/10 lg:rounded-[2.5rem] lg:p-4 transition-all hover:scale-[1.02] duration-500 shadow-2xl">
             <img
-              src="https://images.unsplash.com/photo-1551288049-bbda3865c170?w=1600&q=80&fit=crop"
-              alt="Edge Marketplace Dashboard"
+              src="https://images.unsplash.com/photo-1460925895917-adf4e565db18?w=1600&q=80&fit=crop"
+              alt="Edge Marketplace Dashboard - Professional Product Catalog"
               className="w-full rounded-2xl shadow-2xl ring-1 ring-slate-900/10 bg-white"
             />
             {/* Floating badges for 'Magic' feel */}
