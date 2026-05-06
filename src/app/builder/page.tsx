@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Paintbrush, Wand2, LayoutTemplate, Sparkles, Loader2 } from "lucide-react"
+import { ArrowLeft, Paintbrush, LayoutTemplate, Sparkles, Loader2 } from "lucide-react"
 
 function generateProjectId() {
   return "prj-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
@@ -45,11 +45,10 @@ export default function BuilderEntryPage() {
               Start New Project
             </button>
             <Link
-              href="/launch-your-marketplace"
+              href="/start"
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-8 py-4 text-base font-bold text-white transition hover:bg-white/5"
             >
-              <Wand2 className="h-5 w-5" />
-              Submit Intake First
+              🚀 Launch My Store
             </Link>
           </div>
         </div>
