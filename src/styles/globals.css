@@ -110,3 +110,35 @@
     @apply text-[32px] leading-[44px] font-semibold;
   }
 }
+
+/* GrapesJS canvas sizing guardrails for the constrained website builder.
+   Without these overrides the editor frame can collapse to GrapesJS defaults
+   (about 300x150), leaving the right-side builder section mostly empty. */
+.builder-grapes-host,
+.builder-grapes-host .gjs-editor,
+.builder-grapes-host .gjs-cv-canvas,
+.builder-grapes-host .gjs-cv-canvas__frames,
+.builder-grapes-host .gjs-frame-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.builder-grapes-host .gjs-editor {
+  display: flex;
+  flex-direction: column;
+}
+
+.builder-grapes-host .gjs-cv-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.builder-grapes-host .gjs-cv-canvas__frames,
+.builder-grapes-host .gjs-frame-wrapper {
+  min-height: 0;
+}
+
+.builder-grapes-host .gjs-frame {
+  min-height: 100%;
+}

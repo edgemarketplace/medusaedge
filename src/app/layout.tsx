@@ -3,6 +3,7 @@ import { Toaster } from "@medusajs/ui"
 import { Analytics } from "@vercel/analytics/next"
 import { GeistSans } from "geist/font/sans"
 import { Metadata } from "next"
+import "grapesjs/dist/css/grapes.min.css"
 import "@/styles/globals.css"
 
 export const metadata: Metadata = {

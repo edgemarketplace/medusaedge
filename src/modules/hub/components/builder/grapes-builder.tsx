@@ -429,13 +429,16 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
         </header>
 
         {/* Canvas */}
-        <div className="flex-1 relative bg-gray-100">
+        <div
+          data-testid="builder-canvas-shell"
+          className="flex-1 relative min-h-0 bg-gray-100 overflow-hidden"
+        >
           {!isReady && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
               <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
             </div>
           )}
-          <div ref={containerRef} className="h-full w-full" />
+          <div ref={containerRef} className="builder-grapes-host h-full w-full" />
         </div>
       </div>
     </div>

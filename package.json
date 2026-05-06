@@ -16,7 +16,8 @@
     "analyze": "ANALYZE=true next build",
     "test:no-generate-static-params": "node tests/no-generate-static-params.test.mjs",
     "test:provision-domain": "node tests/provision-domain.test.mjs",
-    "test:hub-routes-intake": "node tests/hub-routes-and-intake-contract.test.mjs"
+    "test:hub-routes-intake": "node tests/hub-routes-and-intake-contract.test.mjs",
+    "test:builder-layout-deploy": "node tests/builder-layout-and-deploy-wiring.test.mjs"
   },
   "resolutions": {
     "webpack": "^5",
