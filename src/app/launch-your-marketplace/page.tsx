@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { InventoryForm, type Product } from "@/components/inventory-form"
+import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
 
@@ -27,6 +29,8 @@ function generateProjectId() {
   return "prj-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "")
+
 export default function LaunchMarketplacePage() {
   const router = useRouter()
   const [paidFlagChecked, setPaidFlagChecked] = useState(false)
@@ -38,6 +42,7 @@ export default function LaunchMarketplacePage() {
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(10)
   const [result, setResult] = useState<{ intakeId: string; previewUrl: string } | null>(null)
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null)
 
   useEffect(() => {
     const selectedPlan = sessionStorage.getItem("selectedPlan")
@@ -51,30 +56,26 @@ export default function LaunchMarketplacePage() {
   useEffect(() => {
     if (paidFlagChecked || typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
-    if (params.get("paid") === "1") {
-      setStep(5)
-    }
+    if (params.get("paid") === "1") setStep(5)
     setPaidFlagChecked(true)
   }, [paidFlagChecked])
 
   useEffect(() => {
     if (step !== 5) return
-    if (countdown <= 0) {
-      setStep(6)
-      return
-    }
+    if (countdown <= 0) return setStep(6)
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [step, countdown])
 
   const validProducts = products.filter((p) => p.name.trim())
   const planPriceLabel = form.plan === "pro" ? "$99/mo" : "$5 activation"
+  const previewUrl = useMemo(() => `https://${(form.desiredSubdomain || "mybusiness").toLowerCase()}.edgemarketplacehub.com`, [form.desiredSubdomain])
 
   function update(field: keyof FormState, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  async function handleCheckout() {
+  async function prepareCheckout() {
     setSubmitting(true)
     setError(null)
     try {
@@ -94,33 +95,22 @@ export default function LaunchMarketplacePage() {
         body: JSON.stringify(intakePayload),
       })
       const intakeData = await intakeResponse.json()
-      if (!intakeResponse.ok || !intakeData.success) {
-        throw new Error(intakeData.error || "Unable to save onboarding details")
-      }
+      if (!intakeResponse.ok || !intakeData.success) throw new Error(intakeData.error || "Unable to save onboarding details")
 
-      setResult({
-        intakeId: intakeData.intakeId,
-        previewUrl: `https://${intakeData.preferredSubdomain}.edgemarketplacehub.com`,
-      })
+      setResult({ intakeId: intakeData.intakeId, previewUrl: `https://${intakeData.preferredSubdomain}.edgemarketplacehub.com` })
 
       const stripeResponse = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: form.plan,
-          email: form.email || "owner@example.com",
-          name: form.ownerName || "Owner",
-          intakeId: intakeData.intakeId,
-        }),
+        body: JSON.stringify({ plan: form.plan, email: form.email || "owner@example.com", name: form.ownerName || "Owner", intakeId: intakeData.intakeId }),
       })
       const stripeData = await stripeResponse.json()
-      if (!stripeResponse.ok || !stripeData.url) {
-        throw new Error(stripeData.error || "Unable to initialize Stripe checkout")
-      }
+      if (!stripeResponse.ok || !stripeData.clientSecret) throw new Error(stripeData.error || "Unable to initialize embedded Stripe checkout")
 
-      window.location.href = stripeData.url
+      setCheckoutClientSecret(stripeData.clientSecret)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to process checkout")
+    } finally {
       setSubmitting(false)
     }
   }
@@ -165,97 +155,64 @@ export default function LaunchMarketplacePage() {
                 <Field label="Email" type="email" value={form.email} onChange={(v) => update("email", v)} />
                 <Field label="Phone" value={form.phone} onChange={(v) => update("phone", v)} />
               </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Current Website (optional)" value={form.currentWebsite} onChange={(v) => update("currentWebsite", v)} placeholder="https://example.com" />
-                <div>
-                  <label className="grid gap-2 text-sm font-bold text-slate-800">
-                    Desired Subdomain *
-                    <div className="flex items-center gap-2">
-                      <input value={form.desiredSubdomain} onChange={(e) => update("desiredSubdomain", e.target.value)} placeholder="acme" className="w-full rounded-lg border border-slate-300 px-4 py-2" />
-                      <span className="text-sm font-semibold text-slate-600">.edgemarketplacehub.com</span>
-                    </div>
-                  </label>
-                </div>
+                <label className="grid gap-2 text-sm font-bold text-slate-800">
+                  Desired Subdomain *
+                  <div className="flex items-center gap-2">
+                    <input value={form.desiredSubdomain} onChange={(e) => update("desiredSubdomain", e.target.value)} placeholder="acme" className="w-full rounded-lg border border-slate-300 px-4 py-2" />
+                    <span className="text-sm font-semibold text-slate-600">.edgemarketplacehub.com</span>
+                  </div>
+                </label>
               </div>
-
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4">
-                  <input type="checkbox" checked={form.customDomain} onChange={(e) => update("customDomain", e.target.checked)} className="h-5 w-5" />
-                  <span className="text-sm font-semibold">I already own a domain</span>
-                </label>
-                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4">
-                  <input type="checkbox" checked={form.needsToPurchaseDomain} onChange={(e) => update("needsToPurchaseDomain", e.target.checked)} className="h-5 w-5" />
-                  <span className="text-sm font-semibold">Need to purchase a domain (included in confirmation email)</span>
-                </label>
+                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4"><input type="checkbox" checked={form.customDomain} onChange={(e) => update("customDomain", e.target.checked)} className="h-5 w-5" /><span className="text-sm font-semibold">I already own a domain</span></label>
+                <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4"><input type="checkbox" checked={form.needsToPurchaseDomain} onChange={(e) => update("needsToPurchaseDomain", e.target.checked)} className="h-5 w-5" /><span className="text-sm font-semibold">Need to purchase a domain (included in confirmation email)</span></label>
               </div>
-
               {form.customDomain && <Field label="Custom Domain" value={form.customDomainName} onChange={(v) => update("customDomainName", v)} placeholder="mybusiness.com" />}
-
-              <div className="flex justify-end">
-                <button onClick={() => setStep(2)} className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button>
-              </div>
+              <div className="flex justify-end"><button onClick={() => setStep(2)} className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button></div>
             </div>
           )}
 
-          {step === 3 && (
-            <InventoryForm
-              initialProducts={products}
-              onSave={(nextProducts) => {
-                setProducts(nextProducts)
-                setStep(4)
-              }}
-              onSkip={() => setStep(4)}
-            />
-          )}
+          {step === 3 && <InventoryForm initialProducts={products} onSave={(nextProducts) => { setProducts(nextProducts); setStep(4) }} onSkip={() => setStep(4)} />}
 
           {step === 4 && (
             <div className="grid gap-8 lg:grid-cols-2">
               <div className="space-y-4">
                 <h2 className="text-2xl font-black">Review before checkout</h2>
-                <div className="rounded-lg border border-slate-200 p-4">
-                  <p className="font-bold">Plan</p>
-                  <p className="text-slate-700">{form.plan.toUpperCase()} - {planPriceLabel}</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-4 text-sm space-y-1">
-                  <p><span className="font-bold">Business:</span> {form.businessName || "Not provided"}</p>
-                  <p><span className="font-bold">Email:</span> {form.email || "owner@example.com"}</p>
-                  <p><span className="font-bold">Subdomain:</span> {(form.desiredSubdomain || "mybusiness") + ".edgemarketplacehub.com"}</p>
-                  <p><span className="font-bold">Current website:</span> {form.currentWebsite || "Not provided"}</p>
-                  <p><span className="font-bold">Custom domain:</span> {form.customDomainName || "No"}</p>
-                  <p><span className="font-bold">Need to purchase domain:</span> {form.needsToPurchaseDomain ? "Yes" : "No"}</p>
-                  <p><span className="font-bold">Products:</span> {validProducts.length}</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-4 space-y-3">
-                  <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" /> I agree to Terms and Conditions</label>
-                  <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" /> I agree to the onboarding and provisioning policy</label>
-                  <label className="flex items-start gap-2 text-sm font-semibold"><input type="checkbox" className="mt-1" /> I have reviewed and approved my selections</label>
-                </div>
+                <SummaryField label="Plan" value={`${form.plan.toUpperCase()} - ${planPriceLabel}`} />
+                <SummaryField label="Business" value={form.businessName} />
+                <SummaryField label="Owner" value={form.ownerName} />
+                <SummaryField label="Email" value={form.email} />
+                <SummaryField label="Phone" value={form.phone} />
+                <SummaryField label="Current website" value={form.currentWebsite} />
+                <SummaryField label="Desired subdomain" value={(form.desiredSubdomain || "mybusiness") + ".edgemarketplacehub.com"} />
+                <SummaryField label="Custom domain" value={form.customDomain ? form.customDomainName : "No"} />
+                <SummaryField label="Need domain purchase" value={form.needsToPurchaseDomain ? "Yes" : "No"} />
+                <SummaryField label="Products count" value={String(validProducts.length)} />
+                <SummaryField label="Website preview" value={previewUrl} isLink />
               </div>
 
               <div className="rounded-xl border border-slate-200 p-6 bg-slate-50">
                 <h3 className="text-xl font-black mb-3">Stripe Checkout</h3>
-                <p className="text-sm text-slate-600 mb-4">This launches a real Stripe Checkout session on the right-side step.</p>
-                <div className="rounded-lg bg-white border border-slate-200 p-4 text-sm space-y-2 mb-6">
-                  <p><span className="font-bold">Email:</span> {form.email || "owner@example.com"}</p>
-                  <p><span className="font-bold">Name:</span> {form.ownerName || "Owner"}</p>
-                  <p><span className="font-bold">Charge:</span> {planPriceLabel}</p>
-                </div>
-                {error && <p className="mb-3 text-sm font-semibold text-red-700">{error}</p>}
-                <button onClick={handleCheckout} disabled={submitting} className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50">
-                  {submitting ? "Redirecting to Stripe..." : "Proceed to secure Stripe checkout"}
-                </button>
+                {!checkoutClientSecret ? (
+                  <>
+                    <p className="text-sm text-slate-600 mb-4">Real embedded Stripe checkout appears here after preparing session with prefilled customer data.</p>
+                    {error && <p className="mb-3 text-sm font-semibold text-red-700">{error}</p>}
+                    <button onClick={prepareCheckout} disabled={submitting} className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50">
+                      {submitting ? "Preparing checkout..." : "Load secure Stripe checkout"}
+                    </button>
+                  </>
+                ) : (
+                  <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret: checkoutClientSecret }}>
+                    <EmbeddedCheckout />
+                  </EmbeddedCheckoutProvider>
+                )}
               </div>
             </div>
           )}
 
-          {step === 5 && (
-            <div className="py-16 text-center">
-              <div className="text-6xl">⚙️</div>
-              <h2 className="mt-4 text-3xl font-black">Running launch automations...</h2>
-              <p className="mt-2 text-slate-600">Please wait {countdown} seconds while we prepare your store.</p>
-            </div>
-          )}
+          {step === 5 && <div className="py-16 text-center"><div className="text-6xl">⚙️</div><h2 className="mt-4 text-3xl font-black">Running launch automations...</h2><p className="mt-2 text-slate-600">Please wait {countdown} seconds while we prepare your store.</p></div>}
 
           {step === 6 && (
             <div className="py-12 text-center">
@@ -275,10 +232,15 @@ export default function LaunchMarketplacePage() {
 }
 
 function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  return <label className="grid gap-2 text-sm font-bold text-slate-800">{label}<input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="rounded-lg border border-slate-300 px-4 py-2" /></label>
+}
+
+function SummaryField({ label, value, isLink = false }: { label: string; value?: string; isLink?: boolean }) {
+  const resolved = value && value.trim().length > 0 ? value : "— Empty"
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-800">
-      {label}
-      <input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="rounded-lg border border-slate-300 px-4 py-2" />
-    </label>
+    <div className="rounded-lg border border-slate-200 p-3 text-sm">
+      <p className="font-bold text-slate-700">{label}</p>
+      {isLink && resolved !== "— Empty" ? <a href={resolved} target="_blank" className="text-blue-600 underline">{resolved}</a> : <p className="text-slate-900">{resolved}</p>}
+    </div>
   )
 }

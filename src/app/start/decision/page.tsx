@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 
 export default function DecisionPage() {
@@ -29,12 +29,26 @@ export default function DecisionPage() {
           <div className="bg-slate-50 rounded-[2rem] p-1 border border-slate-100 shadow-sm overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-3 bg-white rounded-t-[1.8rem]">
               <div className="p-8 hidden md:flex items-end text-sm font-bold text-slate-400 uppercase tracking-widest">Plan Features</div>
-              <button onClick={() => setSelected("launch")} className={`p-8 border-l border-slate-50 text-center ${selected === "launch" ? "bg-blue-50" : ""}`}>
+
+              <button
+                onClick={() => setSelected("launch")}
+                className={`relative p-8 border-l border-slate-50 text-center transition ${
+                  selected === "launch" ? "bg-blue-600 text-white ring-4 ring-blue-200" : "bg-white"
+                }`}
+              >
+                {selected === "launch" && <CheckCircle2 className="absolute right-4 top-4 h-6 w-6" />}
                 <h3 className="text-xl font-black">🚀 Launch</h3>
-                <div className="flex justify-center items-baseline gap-1 my-3"><span className="text-4xl font-black">$0</span><span className="text-slate-400">/mo</span></div>
-                <div className="inline-flex rounded-xl border px-4 py-2 font-bold">Start selling</div>
+                <div className="flex justify-center items-baseline gap-1 my-3"><span className="text-4xl font-black">$0</span><span className={selected === "launch" ? "text-blue-100" : "text-slate-400"}>/mo</span></div>
+                <div className={`inline-flex rounded-xl px-4 py-2 font-bold ${selected === "launch" ? "bg-white text-blue-700" : "border"}`}>Start selling</div>
               </button>
-              <button onClick={() => setSelected("pro")} className={`p-8 border-l border-slate-50 text-center ${selected === "pro" ? "bg-slate-900 text-white" : ""}`}>
+
+              <button
+                onClick={() => setSelected("pro")}
+                className={`relative p-8 border-l border-slate-50 text-center transition ${
+                  selected === "pro" ? "bg-slate-900 text-white ring-4 ring-slate-300" : "bg-white"
+                }`}
+              >
+                {selected === "pro" && <CheckCircle2 className="absolute right-4 top-4 h-6 w-6 text-blue-300" />}
                 <h3 className="text-xl font-black">⚡ Pro</h3>
                 <div className="flex justify-center items-baseline gap-1 my-3"><span className="text-4xl font-black">$99</span><span className="text-slate-400">/mo</span></div>
                 <div className="inline-flex rounded-xl bg-blue-600 text-white px-4 py-2 font-bold">Upgrade to Pro</div>
