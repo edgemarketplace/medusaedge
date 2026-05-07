@@ -48,7 +48,7 @@ export default function HubHero() {
         <div className="mt-20 relative animate-in fade-in zoom-in duration-1000 delay-300">
           <div className="relative mx-auto max-w-5xl rounded-3xl bg-slate-900/5 p-2 ring-1 ring-inset ring-slate-900/10 lg:rounded-[2.5rem] lg:p-4 transition-all hover:scale-[1.02] duration-500 shadow-2xl">
             <img
-              src="https://images.unsplash.com/photo-1460925895917-adf4e565db18?w=1600&q=80&fit=crop"
+              src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Edge Marketplace Dashboard - Professional Product Catalog"
               className="w-full rounded-2xl shadow-2xl ring-1 ring-slate-900/10 bg-white"
             />
