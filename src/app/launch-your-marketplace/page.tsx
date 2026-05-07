@@ -45,7 +45,7 @@ export default function LaunchMarketplacePage() {
   const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null)
 
   const stripePromise = useMemo(() => {
-    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_KEY
     return key ? loadStripe(key) : null
   }, [])
 
@@ -87,7 +87,7 @@ export default function LaunchMarketplacePage() {
     }
 
     if (!stripePromise) {
-      setError("Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.")
+      setError("Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY or NEXT_PUBLIC_STRIPE_KEY.")
       return
     }
 
