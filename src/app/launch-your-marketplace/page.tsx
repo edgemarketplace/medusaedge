@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { InventoryForm, type Product } from "@/components/inventory-form"
+import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
 
@@ -40,6 +42,12 @@ export default function LaunchMarketplacePage() {
   const [result, setResult] = useState<{ intakeId: string; previewUrl: string } | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [approved, setApproved] = useState(false)
+  const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null)
+
+  const stripePromise = useMemo(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    return key ? loadStripe(key) : null
+  }, [])
 
   useEffect(() => {
     const selectedPlan = sessionStorage.getItem("selectedPlan")
@@ -78,6 +86,11 @@ export default function LaunchMarketplacePage() {
       return
     }
 
+    if (!stripePromise) {
+      setError("Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.")
+      return
+    }
+
     setSubmitting(true)
     setError(null)
     try {
@@ -109,16 +122,18 @@ export default function LaunchMarketplacePage() {
           email: form.email || "owner@example.com",
           name: form.ownerName || "Owner",
           intakeId: intakeData.intakeId,
+          embedded: true,
         }),
       })
       const stripeData = await stripeResponse.json()
-      if (!stripeResponse.ok || !stripeData.checkoutUrl) {
-        throw new Error(stripeData.error || "Unable to create Stripe checkout session")
+      if (!stripeResponse.ok || !stripeData.clientSecret) {
+        throw new Error(stripeData.error || "Unable to create embedded Stripe checkout session")
       }
 
-      window.location.href = stripeData.checkoutUrl
+      setEmbeddedClientSecret(stripeData.clientSecret)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to process checkout")
+    } finally {
       setSubmitting(false)
     }
   }
@@ -185,66 +200,93 @@ export default function LaunchMarketplacePage() {
           {step === 3 && <InventoryForm initialProducts={products} onSave={(nextProducts) => { setProducts(nextProducts); setStep(4) }} onSkip={() => setStep(4)} />}
 
           {step === 4 && (
-            <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-black">Review and confirm your launch</h2>
-                <p className="text-sm text-slate-600">Professional checkout standard: clear order summary, visible support, secure payment handoff, and explicit confirmation.</p>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+              <aside className="border-b border-slate-200 bg-slate-50 p-6 lg:border-b-0 lg:border-r lg:p-8">
+                <p className="text-sm font-semibold text-slate-500">EDGE MARKETPLACE HUB</p>
+                <h2 className="mt-1 text-2xl font-bold text-slate-900">Amount due today</h2>
+                <p className="mt-1 text-4xl font-semibold tracking-tight text-slate-900">{form.plan === "pro" ? "$99.00" : "$5.00"}</p>
+                <p className="mt-2 text-sm text-slate-600">{form.plan === "pro" ? "Monthly subscription" : "One-time activation payment"}</p>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="text-sm font-bold text-slate-800">Plan & pricing</p>
-                  <SummaryField label="Selected plan" value={`${form.plan.toUpperCase()} - ${planPriceLabel}`} />
+                <div className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-4 text-sm">
+                  <Row label={form.plan === "pro" ? "Pro plan" : "Launch activation"} value={planPriceLabel} />
+                  <Row label="Products configured" value={String(validProducts.length)} />
+                  <Row label="Preview URL" value={(form.desiredSubdomain || "mybusiness") + ".edgemarketplacehub.com"} />
+                  <div className="border-t border-slate-200 pt-3">
+                    <Row label="Total due" value={form.plan === "pro" ? "$99.00" : "$5.00"} />
+                  </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="text-sm font-bold text-slate-800">Business details</p>
-                  <SummaryField label="Business" value={form.businessName} />
-                  <SummaryField label="Owner" value={form.ownerName} />
-                  <SummaryField label="Email" value={form.email} />
-                  <SummaryField label="Phone" value={form.phone} />
-                  <SummaryField label="Current website" value={form.currentWebsite} />
-                  <SummaryField label="Desired subdomain" value={(form.desiredSubdomain || "mybusiness") + ".edgemarketplacehub.com"} />
-                  <SummaryField label="Custom domain" value={form.customDomain ? form.customDomainName : "No"} />
-                  <SummaryField label="Need domain purchase" value={form.needsToPurchaseDomain ? "Yes" : "No"} />
+                <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Store and owner details</p>
+                  <div className="mt-3 space-y-2 text-sm">
+                    <Row label="Business" value={form.businessName || "— Empty"} />
+                    <Row label="Owner" value={form.ownerName || "— Empty"} />
+                    <Row label="Email" value={form.email || "— Empty"} />
+                    <Row label="Phone" value={form.phone || "— Empty"} />
+                    <Row label="Website" value={form.currentWebsite || "— Empty"} />
+                    <Row label="Subdomain" value={(form.desiredSubdomain || "mybusiness") + ".edgemarketplacehub.com"} />
+                    <Row label="Custom domain" value={form.customDomain ? (form.customDomainName || "— Empty") : "No"} />
+                  </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="text-sm font-bold text-slate-800">Store build summary</p>
-                  <SummaryField label="Products count" value={String(validProducts.length)} />
-                  <SummaryField label="Website preview" value={previewUrl} isLink />
-                  <div className="mt-3 text-xs text-slate-600">Support: hello@edgemarketplacehub.com • 30-day onboarding support included</div>
+                <div className="mt-4 text-xs text-slate-500">
+                  Powered by Stripe • SSL encrypted • PCI compliant
+                </div>
+              </aside>
+
+              <section className="p-6 lg:p-8">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-semibold text-slate-900">Checkout</h3>
+                  <p className="mt-1 text-sm text-slate-600">Medusa-inspired flow: review details, confirm policy, then continue to Stripe secure payment.</p>
                 </div>
 
-                <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                  <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 h-4 w-4" />
-                  <span>I agree to Terms & Conditions and Privacy Policy.</span>
-                </label>
-                <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                  <input type="checkbox" checked={approved} onChange={(e) => setApproved(e.target.checked)} className="mt-0.5 h-4 w-4" />
-                  <span>I have reviewed and approved my selections.</span>
-                </label>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-                <h3 className="text-xl font-black mb-1">Secure payment</h3>
-                <p className="text-sm text-slate-600 mb-4">You’ll be redirected to Stripe Checkout (hosted by Stripe) with your information prefilled.</p>
-
-                <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-                  SSL encrypted • PCI-compliant checkout • Powered by Stripe
+                <div className="rounded-xl border border-slate-300 bg-white">
+                  <div className="border-b border-slate-200 p-4">
+                    <p className="text-sm font-semibold text-slate-900">Contact information</p>
+                    <p className="text-sm text-slate-600">{form.email || "— Empty"}</p>
+                  </div>
+                  <div className="border-b border-slate-200 p-4">
+                    <p className="text-sm font-semibold text-slate-900">Business profile</p>
+                    <p className="text-sm text-slate-600">{form.businessName || "— Empty"} • {form.ownerName || "— Empty"}</p>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm font-semibold text-slate-900">Delivery target</p>
+                    <p className="text-sm text-slate-600">{previewUrl}</p>
+                  </div>
                 </div>
 
-                <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-                  <Row label="Plan total" value={planPriceLabel} />
-                  <Row label="Billing email" value={form.email || "— Empty"} />
-                  <Row label="Contact" value={form.ownerName || "— Empty"} />
+                <div className="mt-5 space-y-3">
+                  <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+                    <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="mt-0.5 h-4 w-4" />
+                    <span>I agree to Terms & Conditions and Privacy Policy.</span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+                    <input type="checkbox" checked={approved} onChange={(e) => setApproved(e.target.checked)} className="mt-0.5 h-4 w-4" />
+                    <span>I have reviewed and approved my onboarding selections.</span>
+                  </label>
                 </div>
 
-                {error && <p className="mt-3 text-sm font-semibold text-red-700">{error}</p>}
+                {error && <p className="mt-4 text-sm font-semibold text-red-700">{error}</p>}
 
-                <button onClick={startStripeCheckout} disabled={submitting} className="mt-5 w-full rounded-lg bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50">
-                  {submitting ? "Redirecting to Stripe..." : "Continue to secure Stripe checkout"}
-                </button>
-                <p className="mt-3 text-center text-xs text-slate-500">No charge is made until you confirm on Stripe.</p>
-              </div>
+                {!embeddedClientSecret && (
+                  <>
+                    <button onClick={startStripeCheckout} disabled={submitting} className="mt-6 w-full rounded-md bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+                      {submitting ? "Loading secure checkout..." : "Load secure checkout"}
+                    </button>
+                    <p className="mt-3 text-center text-xs text-slate-500">Your payment form will load below on this page.</p>
+                  </>
+                )}
+
+                {embeddedClientSecret && stripePromise && (
+                  <div className="mt-6 rounded-xl border border-slate-200 bg-white p-3">
+                    <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret: embeddedClientSecret }}>
+                      <EmbeddedCheckout />
+                    </EmbeddedCheckoutProvider>
+                  </div>
+                )}
+
+                <p className="mt-3 text-center text-xs text-slate-500">No charge is made until you confirm payment in Stripe.</p>
+              </section>
             </div>
           )}
 
@@ -269,16 +311,6 @@ export default function LaunchMarketplacePage() {
 
 function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
   return <label className="grid gap-2 text-sm font-bold text-slate-800">{label}<input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="rounded-lg border border-slate-300 px-4 py-2" /></label>
-}
-
-function SummaryField({ label, value, isLink = false }: { label: string; value?: string; isLink?: boolean }) {
-  const resolved = value && value.trim().length > 0 ? value : "— Empty"
-  return (
-    <div className="rounded-lg border border-slate-200 p-3 text-sm mt-2">
-      <p className="font-bold text-slate-700">{label}</p>
-      {isLink && resolved !== "— Empty" ? <a href={resolved} target="_blank" className="text-blue-600 underline">{resolved}</a> : <p className="text-slate-900">{resolved}</p>}
-    </div>
-  )
 }
 
 function Row({ label, value }: { label: string; value: string }) {

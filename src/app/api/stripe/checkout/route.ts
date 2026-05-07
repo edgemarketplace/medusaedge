@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const stripe = new Stripe(key, { apiVersion: "2024-06-20" as any })
 
   try {
-    const { plan, email, name, intakeId } = await req.json()
+    const { plan, email, name, intakeId, embedded } = await req.json()
 
     const mode: "payment" | "subscription" = plan === "pro" ? "subscription" : "payment"
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
@@ -56,9 +56,17 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items,
       customer_email: email || undefined,
+      customer_creation: "always",
       billing_address_collection: "auto",
-      success_url: `${baseUrl}/launch-your-marketplace?paid=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/launch-your-marketplace?checkout=cancelled`,
+      ...(embedded
+        ? {
+            ui_mode: "embedded" as const,
+            return_url: `${baseUrl}/launch-your-marketplace?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+          }
+        : {
+            success_url: `${baseUrl}/launch-your-marketplace?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/launch-your-marketplace?checkout=cancelled`,
+          }),
       metadata: {
         plan: String(plan || "launch"),
         customer_name: String(name || ""),
@@ -70,6 +78,10 @@ export async function POST(req: Request) {
         },
       },
     })
+
+    if (embedded) {
+      return NextResponse.json({ clientSecret: session.client_secret })
+    }
 
     return NextResponse.json({ checkoutUrl: session.url })
   } catch (error: any) {
