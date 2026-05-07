@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { Plus, Trash2, Download, Upload } from "lucide-react"
 import Papa from "papaparse"
 
@@ -15,9 +15,17 @@ interface InventoryFormProps {
   onSave: (products: Product[]) => void
   onSkip?: () => void
   initialProducts?: Product[]
+  includeSharedMarketplace: boolean
+  onIncludeSharedMarketplaceChange: (value: boolean) => void
 }
 
-export function InventoryForm({ onSave, onSkip, initialProducts = [] }: InventoryFormProps) {
+export function InventoryForm({
+  onSave,
+  onSkip,
+  initialProducts = [],
+  includeSharedMarketplace,
+  onIncludeSharedMarketplaceChange,
+}: InventoryFormProps) {
   const [products, setProducts] = useState<Product[]>(
     initialProducts.length > 0
       ? initialProducts
@@ -33,11 +41,7 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
   const [csvError, setCsvError] = useState<string | null>(null)
 
   function updateProduct(id: string, field: keyof Product, value: string) {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, [field]: value } : p
-      )
-    )
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)))
   }
 
   function addProduct() {
@@ -81,7 +85,7 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
             }))
 
           if (importedProducts.length === 0) {
-            setCsvError("No valid products found in CSV. Ensure columns are: Product Name, Description, Price")
+            setCsvError("No valid products found in CSV. Use columns: Product Name, Description, Price")
             return
           }
 
@@ -95,10 +99,17 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
       },
     })
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
+  }
+
+  function mockPrintifyImport() {
+    setProducts([
+      { id: `prod-printify-${Date.now()}-1`, name: "Printify Tee", description: "Imported from Printify", price: "29.00" },
+      { id: `prod-printify-${Date.now()}-2`, name: "Printify Hoodie", description: "Imported from Printify", price: "49.00" },
+      { id: `prod-printify-${Date.now()}-3`, name: "Printify Mug", description: "Imported from Printify", price: "19.00" },
+    ])
   }
 
   const filledProducts = products.filter((p) => p.name.trim())
@@ -106,15 +117,27 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-2xl font-black mb-2">Add Your Products</h2>
-        <p className="text-slate-600">
-          Start with {products.length} products. You can add more anytime. We need at least 1 to continue.
-        </p>
+        <p className="text-slate-600">Start with 5 products. You can add more anytime. We need at least 1 to continue.</p>
       </div>
 
-      {/* CSV Error */}
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-bold text-slate-900 mb-2">Import options</p>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-white transition">
+            <Upload className="h-4 w-4" /> Import CSV
+          </button>
+          <button onClick={mockPrintifyImport} className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 px-4 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-50 transition">
+            Import from Printify
+          </button>
+          <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-white transition">
+            <Download className="h-4 w-4" /> Download Template
+          </button>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+        </div>
+      </div>
+
       {csvError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <p className="font-bold">CSV Import Error</p>
@@ -122,66 +145,17 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
         </div>
       )}
 
-      {/* CSV Controls */}
-      <div className="flex gap-3 flex-wrap">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
-        >
-          <Upload className="h-4 w-4" />
-          Import CSV
-        </button>
-        <button
-          onClick={downloadTemplate}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
-        >
-          <Download className="h-4 w-4" />
-          Download Template
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          onChange={handleCSVImport}
-          className="hidden"
-        />
-      </div>
-
-      {/* Product Form */}
       <div className="space-y-4">
         {products.map((product) => (
           <div key={product.id} className="rounded-xl border border-slate-200 p-4 bg-white">
             <div className="grid gap-4 sm:grid-cols-3">
-              <input
-                type="text"
-                placeholder="Product name *"
-                value={product.name}
-                onChange={(e) => updateProduct(product.id, "name", e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200"
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                value={product.description}
-                onChange={(e) => updateProduct(product.id, "description", e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200"
-              />
+              <input type="text" placeholder="Product name *" value={product.name} onChange={(e) => updateProduct(product.id, "name", e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200" />
+              <input type="text" placeholder="Description" value={product.description} onChange={(e) => updateProduct(product.id, "description", e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200" />
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={product.price}
-                    onChange={(e) => updateProduct(product.id, "price", e.target.value)}
-                    step="0.01"
-                    min="0"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200"
-                  />
+                  <input type="number" placeholder="Price" value={product.price} onChange={(e) => updateProduct(product.id, "price", e.target.value)} step="0.01" min="0" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200" />
                 </div>
-                <button
-                  onClick={() => removeProduct(product.id)}
-                  className="px-3 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition"
-                >
+                <button onClick={() => removeProduct(product.id)} className="px-3 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -190,16 +164,20 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
         ))}
       </div>
 
-      {/* Add More Button */}
-      <button
-        onClick={addProduct}
-        className="w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-bold text-slate-600 hover:border-blue-400 hover:text-blue-600 transition"
-      >
-        <Plus className="h-4 w-4 inline mr-2" />
-        Add More Products
+      <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4">
+        <input
+          type="checkbox"
+          checked={includeSharedMarketplace}
+          onChange={(e) => onIncludeSharedMarketplaceChange(e.target.checked)}
+          className="h-5 w-5 rounded border-slate-300"
+        />
+        <span className="text-sm font-semibold text-slate-800">Include in shared marketplace</span>
+      </label>
+
+      <button onClick={addProduct} className="w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-bold text-slate-600 hover:border-blue-400 hover:text-blue-600 transition">
+        <Plus className="h-4 w-4 inline mr-2" /> Add More Products
       </button>
 
-      {/* Status */}
       <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
         <p className="text-sm text-blue-900">
           <span className="font-bold">{filledProducts.length}</span> of <span className="font-bold">{products.length}</span> products filled
@@ -207,15 +185,10 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
         </p>
       </div>
 
-      {/* Preview Toggle */}
-      <button
-        onClick={() => setShowPreview(!showPreview)}
-        className="text-sm font-bold text-blue-600 hover:text-blue-700"
-      >
+      <button onClick={() => setShowPreview(!showPreview)} className="text-sm font-bold text-blue-600 hover:text-blue-700">
         {showPreview ? "Hide" : "Show"} Preview
       </button>
 
-      {/* Preview */}
       {showPreview && (
         <div className="rounded-lg bg-slate-100 p-6">
           <h3 className="font-bold mb-4">Product Preview</h3>
@@ -231,20 +204,10 @@ export function InventoryForm({ onSave, onSkip, initialProducts = [] }: Inventor
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex gap-4 flex-wrap justify-between pt-4">
-        <button
-          onClick={onSkip}
-          className="text-sm font-bold text-slate-600 hover:text-slate-900"
-        >
-          Skip for now
-        </button>
-        <button
-          onClick={() => onSave(products)}
-          disabled={!canProceed}
-          className="rounded-lg bg-blue-600 text-white px-6 py-3 font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Continue to Payment →
+        <button onClick={onSkip} className="text-sm font-bold text-slate-600 hover:text-slate-900">Skip for now</button>
+        <button onClick={() => onSave(products)} disabled={!canProceed} className="rounded-lg bg-blue-600 text-white px-6 py-3 font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Continue to Checkout →
         </button>
       </div>
     </div>

@@ -32,7 +32,7 @@ export default function HubHero() {
             If you have a product or service to sell, Edge Marketplace Hub is the solution you&apos;ve been looking for. No tech skills required. No stress. Just sales.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Link href="/start">
+            <Link href="/start/decision">
               <Button size="large" className="rounded-full px-8 h-14 text-lg">
                 🚀 Launch My Store
                 <ArrowRight className="ml-2 h-5 w-5" />

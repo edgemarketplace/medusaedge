@@ -13,7 +13,7 @@ export default function HubNavbar() {
             Edge Marketplace <span className="text-blue-600">Hub</span>
           </span>
         </div>
-        
+
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
           <Link href="/builder" className="hover:text-blue-600 transition-colors">Builder</Link>
           <Link href="#templates" className="hover:text-blue-600 transition-colors">Templates</Link>
@@ -22,9 +22,9 @@ export default function HubNavbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/launch-your-marketplace">
+          <Link href="/start/decision">
             <Button variant="primary" className="rounded-full px-6">
-              Start Intake
+              Launch my store
             </Button>
           </Link>
         </div>
