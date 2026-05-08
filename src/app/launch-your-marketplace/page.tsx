@@ -43,6 +43,7 @@ export default function LaunchMarketplacePage() {
     intakeId: string
     previewUrl: string
     preferredSubdomain?: string
+    reservedSubdomain?: string
     selectedTemplateRepo?: string
   } | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
@@ -128,8 +129,9 @@ export default function LaunchMarketplacePage() {
 
       setResult({
         intakeId: intakeData.intakeId,
-        previewUrl: `https://${intakeData.preferredSubdomain}.edgemarketplacehub.com`,
+        previewUrl: `https://${intakeData.reservedSubdomain || intakeData.preferredSubdomain}.edgemarketplacehub.com`,
         preferredSubdomain: intakeData.preferredSubdomain,
+        reservedSubdomain: intakeData.reservedSubdomain,
         selectedTemplateRepo: intakeData.selectedTemplateRepo,
       })
 

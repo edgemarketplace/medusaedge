@@ -54,9 +54,14 @@ async function isSubdomainTaken(subdomain: string) {
 
 async function reserveAvailableSubdomain(baseSubdomain: string) {
   const normalizedBase = safeSubdomain(baseSubdomain || "marketplace") || "marketplace"
+  const maxLen = 20
 
   for (let suffix = 0; suffix < 200; suffix += 1) {
-    const candidate = suffix === 0 ? normalizedBase : `${normalizedBase}${suffix + 1}`
+    const suffixText = suffix === 0 ? "" : String(suffix + 1)
+    const baseLimit = Math.max(1, maxLen - suffixText.length)
+    const boundedBase = normalizedBase.slice(0, baseLimit)
+    const candidate = `${boundedBase}${suffixText}`
+
     if (!(await isSubdomainTaken(candidate))) {
       return candidate
     }
@@ -96,6 +101,7 @@ export async function handleTenantOnboarding(req: Request) {
         selectedTemplate: selectedTemplateRecord.id,
         selectedTemplateRepo: selectedTemplateRepo,
         preferredSubdomain: existingSubdomain,
+        reservedSubdomain: existingSubdomain,
         subdomain: existingSubdomain,
         previewUrl: `https://${existingSubdomain}.edgemarketplacehub.com`,
         dashboardUrl: `/dashboard?businessName=${encodeURIComponent(String(body.businessName))}&brandColor=${encodeURIComponent(String(body.brandColor || body.brandColors || "#2563eb"))}`,
@@ -132,6 +138,7 @@ export async function handleTenantOnboarding(req: Request) {
       selectedTemplate: selectedTemplateRecord.id,
       selectedTemplateRepo: selectedTemplateRepo,
       preferredSubdomain: tenant.subdomain,
+      reservedSubdomain: tenant.subdomain,
       subdomain: tenant.subdomain,
       previewUrl: `https://${tenant.subdomain}.edgemarketplacehub.com`,
       dashboardUrl: `/dashboard?businessName=${encodeURIComponent(

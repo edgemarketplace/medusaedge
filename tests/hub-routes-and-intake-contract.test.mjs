@@ -18,7 +18,7 @@ for (const route of ["/builder", "/launch-your-marketplace"]) {
 
 // The intake success page expects these exact response fields so it can link
 // into /builder/:intakeId and show the selected template/subdomain.
-for (const field of ["intakeId", "selectedTemplateRepo", "preferredSubdomain"]) {
+for (const field of ["intakeId", "selectedTemplateRepo", "preferredSubdomain", "reservedSubdomain"]) {
   assert.match(intakePageSource, new RegExp(`(data|intakeData)\\.${field}`), `intake page should read ${field}`)
   assert.match(onboardingSource, new RegExp(`${field}:`), `intake API should return ${field}`)
 }
