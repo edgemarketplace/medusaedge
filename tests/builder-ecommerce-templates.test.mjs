@@ -23,6 +23,27 @@ assert.match(templates, /data-gjs-type="footer"/, "templates must include an edi
 assert.match(templates, /data-builder-kind="image"/, "templates should include editable image elements")
 assert.match(templates, /data-builder-kind="video"|data-builder-kind="embed"/, "templates should include editable video/embed capability")
 
+for (const supplementalPriority of [
+  "Boutiques and gift shops ranked highest",
+  "Landscaping ranked as a top opportunity",
+  "Cleaning services ranked highly",
+  "Pet grooming ranked as a strong opportunity",
+  "Food trucks and caterers need menu display",
+  "Farmers market vendors and home artisans need product showcases",
+  "Event rentals and florists convert faster",
+  "Florists need occasion categories",
+]) {
+  assert.match(
+    templates,
+    new RegExp(supplementalPriority),
+    `templates should reflect supplemental doc priority: ${supplementalPriority}`
+  )
+}
+
+assert.match(templates, /function proofStrip/, "templates should include reusable proof/trust strips")
+assert.match(templates, /function packageGrid/, "templates should include reusable package/pricing grids")
+assert.match(templates, /function actionPanel/, "templates should include reusable lead-capture action panels")
+
 assert.match(builder, /ecommerceTemplates/, "builder should import and render ecommerce starter templates")
 assert.match(builder, /sidebarMode/, "builder should support a left-sidebar mode/tab switch")
 assert.match(builder, /data-testid="template-tab"/, "left sidebar should include a Template tab")
