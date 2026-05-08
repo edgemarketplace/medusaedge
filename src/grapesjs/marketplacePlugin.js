@@ -1,34 +1,35 @@
 import { sectionRegistry } from '../sections/index';
 
-
 export default function marketplacePlugin(editor) {
-  // Add Locked Commerce Components
-  editor.DomComponents.addType('medusa-product-grid', {
-    model: {
-      defaults: {
-        draggable: false,
-        removable: false,
-        copyable: false,
-        editable: false,
-      }
-    }
-  });
-
-
-  // Add Blocks from Section Registry
   const bm = editor.BlockManager;
-
 
   Object.values(sectionRegistry).forEach(section => {
     bm.add(section.id, {
       label: section.label,
-      category: section.category || 'Basic',
-      content: section.html,
-      attributes: { class: 'gjs-block-section' }
+      category: section.category,
+      content: section.html, // This now uses the static markup getter
+      attributes: { 
+        class: 'gjs-block-section',
+        'data-section': section.id
+      }
     });
   });
 
+  // UI Improvements: Add Custom Panels
+  const pn = editor.Panels;
+  pn.addPanel({
+    id: 'property-panel',
+    el: '.property-panel-container',
+  });
 
-  // Example: Listen for theme changes to inject tokens
-  // In a real scenario, this would be bound to a UI select
+  // Locked component constraints
+  editor.on('component:add', (model) => {
+    if (model.getAttributes()['data-medusa']) {
+      model.set({
+        removable: false,
+        copyable: false,
+        draggable: false
+      });
+    }
+  });
 }
