@@ -55,9 +55,9 @@ export default function DecisionPage() {
               </button>
             </div>
 
-            <Row feature="💰 Keep more of every sale" launch="5% per sale\nMost sellers upgrade once they start seeing consistent sales" pro="1% per sale\nPro pays for itself at ~$2,500/mo in sales" />
-            <Row feature="🌐 Own your brand" launch="Edge subdomain\nyourcompany.edgemarketplacehub.com" pro="Custom domain + your brand only\n(no platform branding)" />
-            <Row feature="⚡ Go live" launch="$5 to go live\n(refunded after your first sale)" pro="Go live instantly — no activation" />
+            <Row feature="💰 Keep more of every sale" launch={"5% per sale\nMost sellers upgrade once they start seeing consistent sales"} pro={"1% per sale\nPro pays for itself at ~$2,500/mo in sales"} />
+            <Row feature="🌐 Own your brand" launch={"Edge subdomain\nyourcompany.edgemarketplacehub.com"} pro={"Custom domain + your brand only\n(no platform branding)"} />
+            <Row feature="⚡ Go live" launch={"$5 to go live\n(refunded after your first sale)"} pro="Go live instantly — no activation" />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-slate-100 bg-white rounded-b-[1.8rem]">
               <div className="p-8 hidden md:flex flex-col justify-center border-r border-slate-100">

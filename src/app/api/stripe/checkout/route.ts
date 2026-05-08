@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const stripe = new Stripe(key, { apiVersion: "2024-06-20" as any })
 
   try {
-    const { plan, email, name, intakeId, embedded } = await req.json()
+    const { plan, email, name, phone, intakeId, embedded } = await req.json()
 
     const mode: "payment" | "subscription" = plan === "pro" ? "subscription" : "payment"
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
@@ -51,12 +51,35 @@ export async function POST(req: Request) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.edgemarketplacehub.com"
 
+    let customerId: string | undefined = undefined
+    if (email) {
+      const existing = await stripe.customers.list({ email, limit: 1 })
+      if (existing.data.length > 0) {
+        customerId = existing.data[0].id
+        const needsUpdate = (name && existing.data[0].name !== name) || (phone && existing.data[0].phone !== phone)
+        if (needsUpdate) {
+          await stripe.customers.update(customerId, {
+            ...(name ? { name } : {}),
+            ...(phone ? { phone } : {}),
+          })
+        }
+      } else {
+        const created = await stripe.customers.create({
+          email,
+          ...(name ? { name } : {}),
+          ...(phone ? { phone } : {}),
+        })
+        customerId = created.id
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode,
       payment_method_types: ["card"],
       line_items,
-      customer_email: email || undefined,
-      customer_creation: "always",
+      ...(customerId ? { customer: customerId } : {}),
+      customer_email: customerId ? undefined : (email || undefined),
+      ...(customerId ? {} : { customer_creation: "always" as const }),
       billing_address_collection: "auto",
       ...(embedded
         ? {

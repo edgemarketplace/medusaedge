@@ -1,3 +1,5 @@
+import { flagshipFoundationMap, type TemplateFoundationDescriptor } from "@/lib/grapes/template-foundation"
+
 export interface EcommerceTemplate {
   id: string
   name: string
@@ -6,6 +8,7 @@ export interface EcommerceTemplate {
   bestFor: string
   accent: string
   content: string
+  foundation?: TemplateFoundationDescriptor
 }
 
 const img = {
@@ -66,6 +69,7 @@ export const ecommerceTemplates: EcommerceTemplate[] = [
 <section class="bg-slate-100 px-6 py-12" data-template-source="amazon-inspired-marketplace"><div class="mx-auto max-w-7xl"><h2 class="mb-6 text-3xl font-black" data-gjs-editable="true">Featured departments</h2><div class="grid gap-5 md:grid-cols-4">${["Electronics","Office","Home","Wellness"].map(t=>`<div class="rounded-3xl bg-white p-4 shadow-sm"><img data-builder-kind="image" src="${img.product}" class="mb-4 aspect-square w-full rounded-2xl object-cover"/><p class="font-black" data-gjs-editable="true">${t}</p><p class="text-sm text-slate-500" data-gjs-editable="true">From $29</p></div>`).join("")}</div></div></section>
 <section class="bg-white px-6 py-12" data-template-source="amazon-inspired-marketplace"><div class="mx-auto max-w-5xl"><iframe data-builder-kind="video" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Promo video" class="aspect-video w-full rounded-3xl"></iframe></div></section>
 ${footer("amazon-inspired-marketplace")}`,
+    foundation: flagshipFoundationMap["amazon-inspired-marketplace"],
   },
   {
     id: "walmart-inspired-value-retail",
@@ -100,6 +104,7 @@ ${footer("amazon-inspired-marketplace")}`,
     content: `${header("etsy-inspired-maker-boutique", "MakerLane", "bg-orange-700 text-white")}
 <section data-gjs-type="hero" data-template-source="etsy-inspired-maker-boutique" class="bg-orange-50 px-6 py-16"><div class="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2"><div><p class="mb-3 font-serif text-xl italic text-orange-700" data-gjs-editable="true">Handpicked by real makers</p><h1 class="font-serif text-6xl font-black leading-tight text-stone-900" data-gjs-editable="true">Unique goods with a human story.</h1><p class="mt-5 text-lg text-stone-700" data-gjs-editable="true">Showcase artists, digital products, custom services, and collections with warmth.</p><button class="mt-8 rounded-full bg-orange-700 px-6 py-3 font-black text-white" data-gjs-editable="true">Meet the makers</button></div><img data-builder-kind="image" src="${img.maker}" class="rounded-[2rem] shadow-xl" alt="Maker products" /></div></section>
 <section class="bg-white px-6 py-12" data-template-source="etsy-inspired-maker-boutique"><div class="mx-auto grid max-w-7xl gap-6 md:grid-cols-3">${["Custom gifts","Digital downloads","Local artists"].map(t=>`<div class="rounded-[2rem] bg-stone-50 p-5"><img data-builder-kind="image" src="${img.maker}" class="aspect-[4/3] w-full rounded-3xl object-cover"/><p class="mt-4 font-serif text-2xl font-black" data-gjs-editable="true">${t}</p><p class="mt-2 text-stone-600" data-gjs-editable="true">Add a story and let customers personalize.</p></div>`).join("")}</div></section>${footer("etsy-inspired-maker-boutique", "bg-stone-900 text-white")}`,
+    foundation: flagshipFoundationMap["etsy-inspired-maker-boutique"],
   },
   {
     id: "nike-inspired-premium-drop",
@@ -124,6 +129,7 @@ ${footer("amazon-inspired-marketplace")}`,
 <section data-gjs-type="hero" data-template-source="service-pro-operations" class="bg-gradient-to-br from-emerald-900 via-emerald-700 to-cyan-500 px-6 py-16 text-white"><div class="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2"><div><p class="mb-3 text-sm font-black uppercase tracking-[0.22em] text-emerald-100" data-gjs-editable="true">Booked-out service calendar</p><h1 class="text-5xl font-black leading-tight" data-gjs-editable="true">Turn local leads into recurring jobs.</h1><p class="mt-5 text-lg text-emerald-50" data-gjs-editable="true">Show service packages, collect quote requests, and push customers into online booking fast.</p><button class="mt-8 rounded-full bg-white px-6 py-3 font-black text-emerald-900" data-gjs-editable="true">Request a quote</button></div><img data-builder-kind="image" src="${img.lawn}" class="rounded-3xl shadow-2xl" alt="Service team" /></div></section>
 <section class="bg-white px-6 py-12" data-template-source="service-pro-operations"><div class="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">${["Weekly maintenance","Deep cleaning","Emergency response"].map(t=>`<div class="rounded-3xl border border-emerald-100 p-6"><p class="text-xl font-black text-emerald-900" data-gjs-editable="true">${t}</p><p class="mt-2 text-sm text-slate-600" data-gjs-editable="true">Include scope, SLA, and starting price.</p></div>`).join("")}</div></section>
 <section class="bg-slate-50 px-6 py-12" data-template-source="service-pro-operations"><div class="mx-auto max-w-7xl"><h2 class="mb-6 text-3xl font-black text-slate-900" data-gjs-editable="true">How booking works</h2><div class="grid gap-4 md:grid-cols-4">${["Choose service","Pick date","Confirm quote","Team arrives"].map((t,i)=>`<div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs font-black uppercase text-emerald-700">Step ${i+1}</p><p class="mt-2 font-bold" data-gjs-editable="true">${t}</p></div>`).join("")}</div></div></section>${footer("service-pro-operations", "bg-emerald-950 text-white")}`,
+    foundation: flagshipFoundationMap["service-pro-operations"],
   },
   {
     id: "boutique-premium-retail",
