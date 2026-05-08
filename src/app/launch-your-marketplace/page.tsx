@@ -39,10 +39,16 @@ export default function LaunchMarketplacePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(10)
-  const [result, setResult] = useState<{ intakeId: string; previewUrl: string } | null>(null)
+  const [result, setResult] = useState<{
+    intakeId: string
+    previewUrl: string
+    preferredSubdomain?: string
+    selectedTemplateRepo?: string
+  } | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [approved, setApproved] = useState(false)
   const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null)
+  const [checkoutInitRequested, setCheckoutInitRequested] = useState(false)
 
   const stripePromise = useMemo(() => {
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_KEY
@@ -71,6 +77,14 @@ export default function LaunchMarketplacePage() {
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [step, countdown])
+
+  useEffect(() => {
+    if (step !== 4) return
+    if (!agreeTerms || !approved) return
+    if (embeddedClientSecret || submitting || checkoutInitRequested) return
+    setCheckoutInitRequested(true)
+    void startStripeCheckout()
+  }, [step, agreeTerms, approved, embeddedClientSecret, submitting, checkoutInitRequested])
 
   const validProducts = products.filter((p) => p.name.trim())
   const planPriceLabel = form.plan === "pro" ? "$99/mo" : "$5 activation"
@@ -112,7 +126,12 @@ export default function LaunchMarketplacePage() {
       const intakeData = await intakeResponse.json()
       if (!intakeResponse.ok || !intakeData.success) throw new Error(intakeData.error || "Unable to save onboarding details")
 
-      setResult({ intakeId: intakeData.intakeId, previewUrl: `https://${intakeData.preferredSubdomain}.edgemarketplacehub.com` })
+      setResult({
+        intakeId: intakeData.intakeId,
+        previewUrl: `https://${intakeData.preferredSubdomain}.edgemarketplacehub.com`,
+        preferredSubdomain: intakeData.preferredSubdomain,
+        selectedTemplateRepo: intakeData.selectedTemplateRepo,
+      })
 
       const stripeResponse = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -121,6 +140,7 @@ export default function LaunchMarketplacePage() {
           plan: form.plan,
           email: form.email || "owner@example.com",
           name: form.ownerName || "Owner",
+          phone: form.phone || "",
           intakeId: intakeData.intakeId,
           embedded: true,
         }),

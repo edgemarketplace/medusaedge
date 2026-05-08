@@ -32,6 +32,12 @@ create table if not exists public.marketplace_intakes (
   preview_url text,
   production_domain text,
   raw_payload jsonb not null default '{}'::jsonb,
+  provisioning_status text not null default 'queued' check (provisioning_status in ('queued', 'provisioning', 'deployed', 'failed', 'retrying')),
+  idempotency_key text unique,
+  last_error text,
+  attempts integer not null default 0,
+  started_at timestamptz,
+  finished_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -44,6 +50,22 @@ create index if not exists marketplace_intakes_subdomain_idx
 
 create index if not exists marketplace_intakes_status_idx
   on public.marketplace_intakes (status);
+
+create unique index if not exists marketplace_intakes_idempotency_key_uidx
+  on public.marketplace_intakes (idempotency_key)
+  where idempotency_key is not null;
+
+create index if not exists marketplace_intakes_provisioning_status_idx
+  on public.marketplace_intakes (provisioning_status);
+```
+
+Already have the table in production?
+
+Run this migration instead of recreating the table:
+
+```sql
+-- docs/sql/2026-05-08-provisioning-status-model.sql
+\i docs/sql/2026-05-08-provisioning-status-model.sql
 ```
 
 ## 2. Keep browser writes disabled

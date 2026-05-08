@@ -1,7 +1,7 @@
 // Tenant Registry for MVP.
 // Uses Supabase when configured, with an in-memory fallback for local demos.
 
-import { insertMarketplaceIntake } from "@/lib/intake/supabase"
+import { findMarketplaceIntakeByIdempotencyKey, insertMarketplaceIntake } from "@/lib/intake/supabase"
 
 export interface Tenant {
   id: string
@@ -46,18 +46,37 @@ export async function getTenantById(id: string): Promise<Tenant | null> {
   return tenants.find(t => t.id === id) || null
 }
 
-export async function registerTenant(data: Omit<Tenant, "id" | "status" | "createdAt">): Promise<Tenant> {
-  const fallbackId = `tenant_${Math.random().toString(36).substr(2, 9)}`
+export async function registerTenant(
+  data: Omit<Tenant, "id" | "status" | "createdAt"> & {
+    idempotencyKey: string
+    provisioningStatus?: "queued" | "provisioning" | "deployed" | "failed" | "retrying"
+  }
+): Promise<Tenant> {
+  const fallbackId = `tenant_${Math.random().toString(36).substring(2, 11)}`
   const createdAt = new Date().toISOString()
 
+  const { idempotencyKey, provisioningStatus, ...tenantData } = data
+
   const tenant: Tenant = {
-    ...data,
+    ...tenantData,
     id: fallbackId,
     status: "preview",
     createdAt,
   }
 
   try {
+    const existing = await findMarketplaceIntakeByIdempotencyKey(idempotencyKey)
+    if (existing?.id) {
+      const existingTenant = tenants.find((t) => t.id === existing.id)
+      if (existingTenant) {
+        return existingTenant
+      }
+
+      tenant.id = existing.id
+      tenants.push(tenant)
+      return tenant
+    }
+
     const supabaseResult = await insertMarketplaceIntake({
       businessName: tenant.businessName,
       ownerEmail: tenant.ownerEmail,
@@ -68,6 +87,8 @@ export async function registerTenant(data: Omit<Tenant, "id" | "status" | "creat
       productsText: tenant.productsText,
       planType: tenant.planType,
       status: tenant.status,
+      provisioningStatus: provisioningStatus || "queued",
+      idempotencyKey,
       stripeSessionId: tenant.stripeSessionId,
       paymentStatus: tenant.paymentStatus,
     })

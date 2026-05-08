@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { promises as fs } from "fs"
 import path from "path"
-import { getSupabaseIntakeConfig } from "@/lib/intake/supabase"
+import {
+  getSupabaseIntakeConfig,
+  updateMarketplaceIntakeProvisioningStatus,
+} from "@/lib/intake/supabase"
 import { getTemplateById, slugifyBusinessName } from "@/lib/intake/schema"
 import { runProvisioning } from "@/lib/provision/provision-runner.js"
 
@@ -185,6 +188,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
 
     const intake = await loadIntake(projectId)
     const provisioningIntake = buildProvisioningIntake(projectId, body, intake)
+    const now = new Date().toISOString()
+
+    if (intake?.provisioning_status === "failed") {
+      await updateMarketplaceIntakeProvisioningStatus(projectId, "retrying", {
+        lastError: intake?.last_error || null,
+      })
+    }
+
+    await updateMarketplaceIntakeProvisioningStatus(projectId, "provisioning", {
+      incrementAttempts: true,
+      startedAt: now,
+      finishedAt: null,
+      lastError: null,
+    })
+
     const source = await upsertBuilderProject(projectId, projectData, "deployment_requested", {
       templateRepo: provisioningIntake.templateRepo,
       subdomain: provisioningIntake.subdomain,
@@ -192,6 +210,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
 
     const missingEnv = missingProvisioningEnv()
     if (missingEnv.length > 0) {
+      await updateMarketplaceIntakeProvisioningStatus(projectId, "failed", {
+        finishedAt: new Date().toISOString(),
+        lastError: `Missing provisioning credentials: ${missingEnv.join(", ")}`,
+      })
+
       await upsertBuilderProject(projectId, projectData, "deployment_blocked_missing_credentials", {
         templateRepo: provisioningIntake.templateRepo,
         subdomain: provisioningIntake.subdomain,
@@ -211,6 +234,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
     }
 
     const deployment = await runProvisioning(provisioningIntake)
+    await updateMarketplaceIntakeProvisioningStatus(projectId, "deployed", {
+      finishedAt: new Date().toISOString(),
+      lastError: null,
+      previewUrl: deployment.previewUrl || null,
+      productionUrl: deployment.productionUrl || null,
+    })
+
     await upsertBuilderProject(projectId, projectData, "preview_live", {
       templateRepo: provisioningIntake.templateRepo,
       subdomain: provisioningIntake.subdomain,
@@ -230,6 +260,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ project
     })
   } catch (error: any) {
     console.error("Builder deploy error:", error)
+    await updateMarketplaceIntakeProvisioningStatus(projectId, "failed", {
+      finishedAt: new Date().toISOString(),
+      lastError: error.message || "Deployment failed",
+    }).catch(() => {})
+
     await upsertBuilderProject(projectId, {}, "deployment_failed", {
       error: error.message || "Deployment failed",
     }).catch(() => {})

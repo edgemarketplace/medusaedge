@@ -19,7 +19,8 @@
     "test:hub-routes-intake": "node tests/hub-routes-and-intake-contract.test.mjs",
     "test:builder-layout-deploy": "node tests/builder-layout-and-deploy-wiring.test.mjs",
     "test:builder-preview-media": "node tests/builder-preview-media-embed.test.mjs",
-    "test:builder-ecommerce-templates": "node tests/builder-ecommerce-templates.test.mjs"
+    "test:builder-ecommerce-templates": "node tests/builder-ecommerce-templates.test.mjs",
+    "test:provisioning-status-model": "node tests/provisioning-status-model.test.mjs"
   },
   "resolutions": {
     "webpack": "^5",
