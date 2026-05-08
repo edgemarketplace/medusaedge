@@ -127,6 +127,7 @@ export async function insertMarketplaceIntake(
 
 type IntakeRow = {
   id: string
+  subdomain?: string
   provisioning_status?: ProvisioningStatus
   idempotency_key?: string
   attempts?: number
@@ -166,6 +167,25 @@ export async function getMarketplaceIntakeById(intakeId: string): Promise<Intake
 
   const response = await fetch(
     `${config.restUrl}/${config.table}?id=eq.${encodeURIComponent(intakeId)}&select=*`,
+    {
+      headers: {
+        apikey: config.apiKey,
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+    }
+  )
+
+  if (!response.ok) return null
+  const rows = (await response.json()) as IntakeRow[]
+  return rows?.[0] ?? null
+}
+
+export async function findMarketplaceIntakeBySubdomain(subdomain: string): Promise<IntakeRow | null> {
+  const config = getSupabaseIntakeConfig()
+  if (!config) return null
+
+  const response = await fetch(
+    `${config.restUrl}/${config.table}?subdomain=eq.${encodeURIComponent(subdomain)}&select=*`,
     {
       headers: {
         apikey: config.apiKey,

@@ -46,6 +46,13 @@ export async function getTenantById(id: string): Promise<Tenant | null> {
   return tenants.find(t => t.id === id) || null
 }
 
+export async function isTenantSubdomainTaken(subdomain: string): Promise<boolean> {
+  const normalized = String(subdomain || "").trim().toLowerCase()
+  if (!normalized) return false
+
+  return tenants.some((tenant) => tenant.subdomain.toLowerCase() === normalized)
+}
+
 export async function registerTenant(
   data: Omit<Tenant, "id" | "status" | "createdAt"> & {
     idempotencyKey: string

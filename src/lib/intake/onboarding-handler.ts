@@ -1,7 +1,7 @@
 import { createHash } from "crypto"
 import { NextResponse } from "next/server"
-import { registerTenant } from "@/lib/tenants/registry"
-import { findMarketplaceIntakeByIdempotencyKey } from "@/lib/intake/supabase"
+import { registerTenant, isTenantSubdomainTaken } from "@/lib/tenants/registry"
+import { findMarketplaceIntakeByIdempotencyKey, findMarketplaceIntakeBySubdomain } from "@/lib/intake/supabase"
 import { getTemplateById, slugifyBusinessName } from "@/lib/intake/schema"
 
 function safeSubdomain(value: string) {
@@ -43,6 +43,28 @@ function buildIdempotencyKey(body: Record<string, any>, templateId: string, pref
   return `intake_${hash}`
 }
 
+async function isSubdomainTaken(subdomain: string) {
+  const [inMemoryTaken, existingSupabase] = await Promise.all([
+    isTenantSubdomainTaken(subdomain),
+    findMarketplaceIntakeBySubdomain(subdomain),
+  ])
+
+  return inMemoryTaken || Boolean(existingSupabase?.id)
+}
+
+async function reserveAvailableSubdomain(baseSubdomain: string) {
+  const normalizedBase = safeSubdomain(baseSubdomain || "marketplace") || "marketplace"
+
+  for (let suffix = 0; suffix < 200; suffix += 1) {
+    const candidate = suffix === 0 ? normalizedBase : `${normalizedBase}${suffix + 1}`
+    if (!(await isSubdomainTaken(candidate))) {
+      return candidate
+    }
+  }
+
+  throw new Error("Unable to reserve an available subdomain")
+}
+
 export async function handleTenantOnboarding(req: Request) {
   try {
     const body = await req.json()
@@ -55,17 +77,39 @@ export async function handleTenantOnboarding(req: Request) {
     const selectedTemplateRecord = getTemplateById(selectedTemplate)
     const selectedTemplateRepo = selectedTemplateRecord.repo
 
-    const preferredSubdomain = body.preferredSubdomain || body.subdomain
+    const requestedSubdomain = body.preferredSubdomain || body.subdomain
       ? safeSubdomain(String(body.preferredSubdomain || body.subdomain))
       : safeSubdomain(String(body.businessName))
 
-    const idempotencyKey = buildIdempotencyKey(body, selectedTemplateRecord.id, preferredSubdomain)
+    const idempotencyKey = buildIdempotencyKey(body, selectedTemplateRecord.id, requestedSubdomain)
     const existing = await findMarketplaceIntakeByIdempotencyKey(idempotencyKey)
+
+    if (existing?.id) {
+      const existingSubdomain = existing.subdomain || requestedSubdomain
+      const provisioningStatus = existing.provisioning_status || "queued"
+      return NextResponse.json({
+        success: true,
+        idempotentReplay: true,
+        intakeId: existing.id,
+        tenantId: existing.id,
+        idempotencyKey,
+        selectedTemplate: selectedTemplateRecord.id,
+        selectedTemplateRepo: selectedTemplateRepo,
+        preferredSubdomain: existingSubdomain,
+        subdomain: existingSubdomain,
+        previewUrl: `https://${existingSubdomain}.edgemarketplacehub.com`,
+        dashboardUrl: `/dashboard?businessName=${encodeURIComponent(String(body.businessName))}&brandColor=${encodeURIComponent(String(body.brandColor || body.brandColors || "#2563eb"))}`,
+        status: "intake_received",
+        provisioningStatus,
+      })
+    }
+
+    const reservedSubdomain = await reserveAvailableSubdomain(requestedSubdomain)
 
     const tenant = await registerTenant({
       businessName: String(body.businessName),
       ownerEmail: String(body.email),
-      subdomain: preferredSubdomain,
+      subdomain: reservedSubdomain,
       templateId: selectedTemplateRecord.id,
       brandColor: body.brandColor || body.brandColors || "#2563eb",
       tagline: body.tagline || "",
@@ -77,11 +121,11 @@ export async function handleTenantOnboarding(req: Request) {
       idempotencyKey,
     })
 
-    const provisioningStatus = existing?.provisioning_status || "queued"
+    const provisioningStatus = "queued"
 
     return NextResponse.json({
       success: true,
-      idempotentReplay: Boolean(existing?.id),
+      idempotentReplay: false,
       intakeId: tenant.id,
       tenantId: tenant.id,
       idempotencyKey,

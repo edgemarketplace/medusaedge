@@ -28,4 +28,13 @@ for (const field of ["intakeId", "selectedTemplateRepo", "preferredSubdomain"]) 
 assert.match(onboardingSource, /getTemplateById/, "intake handler should map selectedTemplate to a template repo")
 assert.match(onboardingSource, /selectedTemplate/, "intake handler should accept selectedTemplate")
 
+// Idempotency + reservation hardening:
+// - replay should short-circuit with existing intake
+// - new requests should reserve an available subdomain (collision-safe)
+assert.match(onboardingSource, /findMarketplaceIntakeByIdempotencyKey/, "intake API should lookup idempotency key")
+assert.match(onboardingSource, /if \(existing\?\.id\)/, "intake API should return existing intake for idempotent replay")
+assert.match(onboardingSource, /idempotentReplay: true/, "replay response should explicitly mark idempotentReplay true")
+assert.match(onboardingSource, /reserveAvailableSubdomain/, "intake API should reserve a collision-safe subdomain")
+assert.match(onboardingSource, /findMarketplaceIntakeBySubdomain/, "subdomain reservation should check Supabase collisions")
+
 console.log("hub routes bypass middleware and intake response contract is aligned")
