@@ -374,26 +374,27 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
             <div className="space-y-3 p-3">
               <div className="rounded-xl border border-blue-500/30 bg-blue-950/30 p-3">
                 <p className="text-xs font-black text-white">Start with Template</p>
-                <p className="mt-1 text-[10px] leading-4 text-slate-400">Choose an ecommerce-inspired starting point, then switch to Blocks to update sections, images, video, embeds, text, and CTAs.</p>
+                <p className="mt-1 text-[10px] leading-4 text-slate-400">Pick a starter layout below. Cards are compact and side-by-side for faster selection.</p>
               </div>
-              {ecommerceTemplates.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => handleApplyTemplate(template.id)}
-                  className="group w-full rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-blue-500 hover:bg-slate-800"
-                >
-                  <div className={clsx("mb-3 h-2 rounded-full bg-gradient-to-r", template.accent)} />
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-black text-slate-100">{template.name}</p>
-                      <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">{template.source}</p>
+
+              <div className="grid grid-cols-2 gap-2" data-testid="template-grid-2col">
+                {ecommerceTemplates.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => handleApplyTemplate(template.id)}
+                    className="group h-[120px] rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-2 text-left transition hover:border-blue-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    title={`Use ${template.name}`}
+                  >
+                    <div className={clsx("mb-2 h-1.5 rounded-full bg-gradient-to-r", template.accent)} />
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 text-[11px] font-black leading-4 text-slate-100">{template.name}</p>
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-blue-300" />
                     </div>
-                    <Plus className="h-4 w-4 text-slate-500 group-hover:text-blue-300" />
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-400">{template.description}</p>
-                  <p className="mt-2 rounded-lg bg-slate-950 px-2 py-1.5 text-[10px] leading-4 text-slate-500">Best for: {template.bestFor}</p>
-                </button>
-              ))}
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-400">{template.description}</p>
+                    <p className="mt-1 line-clamp-1 rounded-md bg-slate-950 px-1.5 py-1 text-[9px] leading-3 text-slate-500">Best for: {template.bestFor}</p>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             grouped.map(({ cat, blocks }) => {
