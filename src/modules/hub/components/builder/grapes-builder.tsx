@@ -48,12 +48,27 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
             appendTo: '.block-panel',
           },
           canvas: {
-            head: `<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;">`,
             styles: [
               'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
               'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
             ],
           },
+        })
+
+        // Inject CSP meta tag into iframe head after canvas is ready
+        editor.on('canvas:ready', () => {
+          try {
+            const iframe = editor.Canvas.getIframe()
+            if (iframe?.contentDocument?.head) {
+              const meta = iframe.contentDocument.createElement('meta')
+              meta.httpEquiv = 'Content-Security-Policy'
+              meta.content = "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;"
+              iframe.contentDocument.head.appendChild(meta)
+              console.log('[GrapesBuilder] CSP meta tag injected into iframe head')
+            }
+          } catch (e) {
+            console.warn('[GrapesBuilder] Failed to inject CSP meta:', e)
+          }
         })
 
         // Register all 30 pre-approved blocks
