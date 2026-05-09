@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import type grapesjs from "grapesjs"
+import GrapesJSEditor from "@/GrapesJSEditor"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
 import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
 import { ecommerceTemplates } from "@/lib/grapes/ecommerce-templates"
@@ -95,7 +96,28 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   }, [selectedMedia])
 
   /* ── init GrapesJS ── */
-  useEffect(() => {
+  const [useV2, setUseV2] = useState(true)
+
+  if (useV2) {
+    return (
+      <GrapesJSEditor 
+        projectId={projectId}
+        templateHtml={initialProject ? "" : ""} // Map project data here
+        onBack={() => setUseV2(false)}
+        onSave={async (html, css) => {
+           console.log("Saving V2 Blueprint", { html, css })
+           setSaving(true)
+           try {
+             // Use existing draft handler
+             if (onSaveDraft) await onSaveDraft({ html, css, type: 'v2-blueprint' })
+           } finally {
+             setSaving(false)
+           }
+        }}
+      />
+    )
+  }
+
     let destroyed = false
 
     async function init() {
