@@ -107,19 +107,19 @@ export default function TenantStorefront() {
         {renderedPage}
       </main>
 
-      {/* Admin Bar (only visible in preview) */}
+      {/* Small Admin Bar for the merchant (only visible in preview) */}
       <div className="fixed bottom-6 right-6 z-50">
-        <div className="bg-slate-900 text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 border border-slate-700">
-          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Preview Mode</span>
-          <div className="h-4 w-[1px] bg-slate-700 mx-1" />
-          <Button 
-            className="h-6 px-2 text-[9px] bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => window.location.href = "/dashboard"}
-          >
-            Back to Dashboard
-          </Button>
-        </div>
+         <div className="bg-slate-900 text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 border border-slate-700">
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Preview Mode</span>
+            <div className="h-4 w-[1px] bg-slate-700 mx-1" />
+            <Button 
+              className="h-6 px-2 text-[9px] bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => window.location.href = "https://edgemarketplacehub.com"}
+            >
+              Back to Edge Hub
+            </Button>
+         </div>
       </div>
     </div>
   )

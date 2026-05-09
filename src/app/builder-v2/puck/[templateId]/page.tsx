@@ -37,7 +37,7 @@ export default function PuckEditorPage() {
     console.log(`[Puck Editor] Switched to theme: ${themeName}`);
   }, [themeName]);
 
-  // Get Puck config with theme-aware components
+  // Get Puck config with theme-aware components (includes categories)
   const config = getPuckConfig(themeName);
 
   // Get Puck data from template system
@@ -97,7 +97,7 @@ export default function PuckEditorPage() {
       {/* Puck Editor */}
       <div style={{ flex: 1, overflow: "hidden" }}>
         <Puck
-          config={{ components: config }}
+          config={config}
           data={data}
           onPublish={handlePublish}
         />

@@ -1,200 +1,48 @@
-import { HttpTypes } from "@medusajs/types"
-import { updateSession } from "@/utils/supabase/middleware"
 import { NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
-const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
-
-const regionMapCache = {
-  regionMap: new Map<string, HttpTypes.StoreRegion>(),
-  regionMapUpdated: Date.now(),
-}
-
-async function getRegionMap(cacheId: string) {
-  const { regionMap, regionMapUpdated } = regionMapCache
-
-  if (
-    !regionMap.keys().next().value ||
-    regionMapUpdated < Date.now() - 3600 * 1000
-  ) {
-    // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
-    const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
-      headers: {
-        "x-publishable-api-key": PUBLISHABLE_API_KEY!,
-      },
-      next: {
-        revalidate: 3600,
-        tags: [`regions-${cacheId}`],
-      },
-    }).then(async (response) => {
-      const json = await response.json()
-
-      if (!response.ok) {
-        throw new Error(json.message)
-      }
-
-      return json
-    }).catch((e) => {
-      console.error("Middleware.ts: Fetch failed for /store/regions. Is Medusa running?", e.message)
-      return { regions: [] }
-    })
-
-    if (!regions?.length) {
-      console.error("No regions found. Please set up regions in your Medusa Admin.")
-      // Return early with default response instead of throwing
-      return updateSession(request, NextResponse.next())
-    }
-
-    // Create a map of country codes to regions.
-    regions.forEach((region: HttpTypes.StoreRegion) => {
-      region.countries?.forEach((c) => {
-        regionMapCache.regionMap.set(c.iso_2 ?? "", region)
-      })
-    })
-
-    regionMapCache.regionMapUpdated = Date.now()
-  }
-
-  return regionMapCache.regionMap
-}
-
 /**
- * Fetches regions from Medusa and sets the region cookie.
- * @param request
- * @param response
- */
-async function getCountryCode(
-  request: NextRequest,
-  regionMap: Map<string, HttpTypes.StoreRegion | number>
-) {
-  try {
-    let countryCode
-
-    const vercelCountryCode = request.headers
-      .get("x-vercel-ip-country")
-      ?.toLowerCase()
-
-    const urlCountryCode = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
-
-    if (urlCountryCode && regionMap.has(urlCountryCode)) {
-      countryCode = urlCountryCode
-    } else if (vercelCountryCode && regionMap.has(vercelCountryCode)) {
-      countryCode = vercelCountryCode
-    } else if (regionMap.has(DEFAULT_REGION)) {
-      countryCode = DEFAULT_REGION
-    } else if (regionMap.keys().next().value) {
-      countryCode = regionMap.keys().next().value
-    }
-
-    return countryCode
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        "Middleware.ts: Error getting the country code. Did you set up regions in your Medusa Admin and define a NEXT_PUBLIC_MEDUSA_BACKEND_URL environment variable?"
-      )
-    }
-  }
-}
-
-async function setCacheId(request: NextRequest, response: NextResponse) {
-  const cacheId = request.nextUrl.searchParams.get("_medusa_cache_id")
-
-  if (cacheId) {
-    return cacheId
-  }
-
-  const newCacheId = crypto.randomUUID()
-  response.cookies.set("_medusa_cache_id", newCacheId, { maxAge: 60 * 60 * 24 })
-  return newCacheId
-}
-
-/**
- * Middleware to handle region selection and cache id.
+ * Middleware for Edge Marketplace Hub
+ * Handles subdomain routing to tenant storefronts
  */
 export async function middleware(request: NextRequest) {
-  // check if the url is a static asset or a hub page
+  const host = request.headers.get("host") || ""  
+  const url = request.nextUrl.pathname
+  
+  // Skip middleware for API routes, static files, and Next.js internals
   if (
-    request.nextUrl.pathname.includes(".") ||
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/start") ||
-    request.nextUrl.pathname.startsWith("/builder") ||
-    request.nextUrl.pathname.startsWith("/builder-v2") ||
-    request.nextUrl.pathname.startsWith("/launch-your-marketplace") ||
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/demo") ||
-    request.nextUrl.pathname.startsWith("/build")
+    url.startsWith("/api/") ||
+    url.startsWith("/_next/") ||
+    url.includes(".")
   ) {
-    return updateSession(request)
+    return NextResponse.next()
   }
 
-  const searchParams = request.nextUrl.searchParams
-  const cartId = searchParams.get("cart_id")
-  const checkoutStep = searchParams.get("step")
-  const cacheIdCookie = request.cookies.get("_medusa_cache_id")
-  const cartIdCookie = request.cookies.get("_medusa_cart_id")
-
-  const host = request.headers.get("host") || ""
-  
   const isLocalhost = host.includes("localhost")
-  const baseDomain = isLocalhost ? "localhost:8000" : "edgemarketplacehub.com"
+  const baseDomain = isLocalhost ? "localhost:3000" : "edgemarketplacehub.com"
   
   // Check if we are on a subdomain (e.g. jasonsstore.edgemarketplacehub.com)
-  const isSubdomain = host.endsWith(`.${baseDomain}`) && host !== `www.${baseDomain}`
+  const isSubdomain = host.endsWith(`.${baseDomain}`) && !host.startsWith("www.") && host !== baseDomain
   
   if (isSubdomain) {
     const subdomain = host.replace(`.${baseDomain}`, "")
     
     // Rewrite to the storefront route
-    const response = NextResponse.rewrite(new URL(`/storefront/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+    const response = NextResponse.rewrite(
+      new URL(`/storefront/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url)
+    )
     
     // Set tenant header for downstream use
     response.headers.set("x-tenant", subdomain)
     
-    return updateSession(request, response)
+    return response
   }
 
-  let response = NextResponse.next()
-  let redirectUrl = `${request.nextUrl.origin}${request.nextUrl.pathname}${request.nextUrl.search}`
-
-  // Set a cache id to invalidate the cache for this instance only
-  const cacheId = await setCacheId(request, response)
-
-  const regionMap = await getRegionMap(cacheId)
-
-  const countryCode = regionMap && (await getCountryCode(request, regionMap))
-
-  const urlHasCountryCode =
-    countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
-
-  // check if one of the country codes is in the url
-  if (urlHasCountryCode && (!cartId || cartIdCookie) && cacheIdCookie) {
-    return updateSession(request, response)
-  }
-
-  const redirectPath =
-    request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
-
-  const queryString = request.nextUrl.search ? request.nextUrl.search : ""
-
-  // If no country code is set, we redirect to the relevant region.
-  if (!urlHasCountryCode && countryCode) {
-    redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
-    response = NextResponse.redirect(`${redirectUrl}`, 307)
-  }
-
-  // If a cart_id is in the params, we set it as a cookie and redirect to the address step.
-  if (cartId && !checkoutStep) {
-    redirectUrl = `${redirectUrl}&step=address`
-    response = NextResponse.redirect(`${redirectUrl}`, 307)
-    response.cookies.set("_medusa_cart_id", cartId, { maxAge: 60 * 60 * 24 })
-  }
-
-  return updateSession(request, response)
+  // For all other requests, just continue
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    "/:path*",
   ],
 }

@@ -29,22 +29,43 @@ import React from "react"
 // Default theme for initial render
 const defaultTheme: ThemeTokens = themes["luxury-fashion"]
 
-// ══════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════
+// CATEGORY DEFINITIONS (for Puck sidebar organization)
+// ═════════════════════════════════════════════════════════════════
+
+const CATEGORY_LABELS: Record<string, string> = {
+  hero: "🎬 Hero Sections",
+  header: "📌 Headers & Navigation",
+  navigation: "📌 Headers & Navigation",
+  footer: "🦶 Footers",
+  commerce: "🛒 Commerce",
+  social: "💬 Social Proof",
+  trust: "💬 Social Proof",
+  content: "📝 Content & Info",
+  promotional: "🎯 Promotional",
+  booking: "📅 Booking & Services",
+}
+
+// ═════════════════════════════════════════════════════════════════
 // Convert section registry to Puck components config
 // NOW: Each component receives (props, theme) for theme-aware rendering
-// ══════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════
 
 export function getPuckConfig(
   themeName: ThemeName = "luxury-fashion"
-): Config["components"] {
+): Config {
   const theme = themes[themeName] || defaultTheme
   const components: Config["components"] = {}
+
+  // Group components by category
+  const categoryMap: Record<string, string[]> = {}
 
   console.log(`[Puck Converter] Processing ${Object.keys(sectionRegistry).length} sections with theme: ${themeName}`)
 
   for (const [sectionId, entry] of Object.entries(sectionRegistry)) {
     const registryEntry = entry as RegistryEntry
-    const schema = registryEntry.schema
+    const schema = registryEntry.schema as Record<string, any>
+    const category = registryEntry.category || "uncategorized"
 
     if (!schema) {
       console.warn(`[Puck Converter] No schema found for ${sectionId}, skipping`)
@@ -55,6 +76,7 @@ export function getPuckConfig(
     const fields: Record<string, any> = {}
 
     for (const [key, fieldConfig] of Object.entries(schema)) {
+      const config = fieldConfig as { type: string; options?: any[] }
       if (fieldConfig.type === "text") {
         fields[key] = { type: "text" }
       } else if (fieldConfig.type === "textarea") {
@@ -80,24 +102,41 @@ export function getPuckConfig(
     }
 
     // Create render function that injects theme
-    // The component receives (props, theme) instead of just (props)
     const Component = registryEntry.component
 
     components[sectionId] = {
       fields,
       render: (props: any) => {
-        // Inject theme into component props using createElement (avoid JSX in .ts)
         return React.createElement(Component, { ...props, theme })
       },
-      // Puck 0.21+ API: add labels for better UX
-      label: sectionId,
+      // Use label from registry or sectionId
+      label: registryEntry.label || sectionId,
     }
 
-    console.log(`[Puck Converter] Mapped ${sectionId} with fields:`, Object.keys(fields))
+    // Track components by category for categories object
+    const categoryLabel = CATEGORY_LABELS[category] || "📦 Other"
+    if (!categoryMap[categoryLabel]) {
+      categoryMap[categoryLabel] = []
+    }
+    categoryMap[categoryLabel].push(sectionId)
+
+    console.log(`[Puck Converter] Mapped ${sectionId} (${category}) with fields:`, Object.keys(fields))
   }
 
-  console.log(`[Puck Converter] Generated Puck config with ${Object.keys(components).length} components`)
-  return components
+  // Build categories object for Puck sidebar (Record<string, Category>)
+  const categories: Config["categories"] = {}
+  for (const [label, componentIds] of Object.entries(categoryMap)) {
+    categories[label] = {
+      components: componentIds,
+    }
+  }
+
+  console.log(`[Puck Converter] Generated Puck config with ${Object.keys(components).length} components in ${Object.keys(categories).length} categories`)
+
+  return {
+    components,
+    categories,
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
