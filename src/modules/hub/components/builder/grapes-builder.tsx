@@ -48,6 +48,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
             appendTo: '.block-panel',
           },
           canvas: {
+            head: `<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;">`,
             styles: [
               'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
               'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
