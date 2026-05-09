@@ -32,6 +32,20 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  async headers() {
+    return [
+      {
+        source: '/builder-v2/editor/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+          }
+        ]
+      }
+    ]
+  },
 }
 
 module.exports = nextConfig
