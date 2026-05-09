@@ -38,8 +38,52 @@ const tenants: Tenant[] = [
 ]
 
 export async function getTenantBySubdomain(subdomain: string): Promise<Tenant | null> {
-  // Simulate DB latency
-  return tenants.find(t => t.subdomain === subdomain) || null
+  // First check in-memory
+  const memTenant = tenants.find(t => t.subdomain === subdomain)
+  if (memTenant) return memTenant
+  
+  // Fall back to Supabase
+  try {
+    const config = getSupabaseIntakeConfig()
+    if (!config) return null
+    
+    const url = `${config.restUrl}/marketplace_intakes?subdomain=eq.${encodeURIComponent(subdomain)}&limit=1`
+    const response = await fetch(url, {
+      headers: {
+        'apikey': config.apiKey,
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+    })
+    
+    if (!response.ok) return null
+    
+    const results = await response.json()
+    if (!results || results.length === 0) return null
+    
+    const intake = results[0]
+    const tenant: Tenant = {
+      id: intake.id,
+      businessName: intake.business_name,
+      ownerEmail: intake.owner_email,
+      subdomain: intake.subdomain,
+      templateId: intake.template_id,
+      brandColor: intake.brand_color || '#2563eb',
+      tagline: intake.tagline || '',
+      productsText: intake.products_text || '',
+      planType: intake.plan_type || 'launch',
+      status: intake.status || 'preview',
+      stripeSessionId: intake.stripe_session_id,
+      paymentStatus: intake.payment_status,
+      createdAt: intake.created_at,
+    }
+    
+    // Cache in memory
+    tenants.push(tenant)
+    return tenant
+  } catch (error) {
+    console.error('Failed to fetch tenant from Supabase:', error)
+    return null
+  }
 }
 
 export async function getTenantById(id: string): Promise<Tenant | null> {
