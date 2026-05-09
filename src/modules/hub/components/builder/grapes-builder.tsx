@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import type grapesjs from "grapesjs"
 import GrapesJSEditor from "@/GrapesJSEditor"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
 import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
 import { ecommerceTemplates } from "@/lib/grapes/ecommerce-templates"
 import type { BlockDef } from "@/lib/grapes/blocks"
-import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2 } from "lucide-react"
+import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2, Bug, Copy } from "lucide-react"
 import Link from "next/link"
 import clsx from "clsx"
 
@@ -25,6 +26,103 @@ type SelectedMedia = {
   value: string
   placeholder: string
 } | null
+
+/* ──────────────────────────────────────────────────────────────
+ * Default starter composition — loaded when no saved project exists.
+ * Never show a blank canvas.
+ * ────────────────────────────────────────────────────────────── */
+const DEFAULT_PAGE_HTML = `<header data-gjs-type="header" data-template-source="starter" class="bg-slate-950 text-white px-6 py-4">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-6">
+    <div class="text-xl font-black tracking-tight" data-gjs-editable="true">Marketplace</div>
+    <nav class="hidden items-center gap-6 text-sm font-medium opacity-90 md:flex">
+      <a href="#" data-gjs-editable="true">Shop</a>
+      <a href="#" data-gjs-editable="true">Categories</a>
+      <a href="#" data-gjs-editable="true">Deals</a>
+      <a href="#" data-gjs-editable="true">Support</a>
+    </nav>
+    <button class="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-950" data-gjs-editable="true">Start shopping</button>
+  </div>
+</header>
+<section data-gjs-type="hero" class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-600 px-6 py-20 text-white">
+  <div class="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2">
+    <div>
+      <p class="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-indigo-200" data-gjs-editable="true">Launch your store</p>
+      <h1 class="text-5xl font-black leading-tight" data-gjs-editable="true">Build your marketplace. Drag, drop, deploy.</h1>
+      <p class="mt-5 text-lg text-slate-100" data-gjs-editable="true">Add sections from the left panel to create your perfect storefront.</p>
+      <button class="mt-8 rounded-full bg-indigo-500 px-6 py-3 font-black text-white" data-gjs-editable="true">Explore sections</button>
+    </div>
+    <div class="rounded-3xl bg-white/10 p-8 flex items-center justify-center h-64">
+      <p class="text-indigo-200 text-sm font-mono">Your hero image</p>
+    </div>
+  </div>
+</section>
+<footer data-gjs-type="footer" class="bg-slate-950 text-white px-6 py-10">
+  <div class="mx-auto grid max-w-7xl gap-8 md:grid-cols-4">
+    <div><p class="text-lg font-black" data-gjs-editable="true">Marketplace</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Everything your customers need in one storefront.</p></div>
+    <div><p class="font-bold" data-gjs-editable="true">Shop</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">New arrivals<br/>Best sellers<br/>Gift cards</p></div>
+    <div><p class="font-bold" data-gjs-editable="true">Company</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">About<br/>Vendors<br/>Careers</p></div>
+    <div><p class="font-bold" data-gjs-editable="true">Help</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Shipping<br/>Returns<br/>Contact</p></div>
+  </div>
+</footer>`
+
+/* Section boundary and hover styles injected into the GrapesJS canvas */
+const CANVAS_SECTION_STYLES = `
+  /* Section boundaries */
+  body {
+    background: #f1f5f9;
+    margin: 0;
+  }
+  [data-gjs-type] {
+    position: relative;
+  }
+  [data-gjs-type]:not(.gjs-selected) {
+    outline: 1px dashed transparent;
+    transition: outline-color 0.2s;
+  }
+  [data-gjs-type]:not(.gjs-selected):hover {
+    outline: 1px dashed #94a3b8;
+  }
+  .gjs-selected {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: -1px;
+  }
+  /* Hover controls overlay — these are rendered by GrapesJS badges */
+  .gjs-badge {
+    pointer-events: all !important;
+  }
+  /* Section labels */
+  .gjs-selected::before {
+    content: attr(data-gjs-type);
+    position: absolute;
+    top: -28px;
+    left: 8px;
+    background: #3b82f6;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  /* Canvas centering / frame on Desktop */
+  @media (min-width: 1024px) {
+    body {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+  }
+  /* Realistic storefront preview frame */
+  .gjs-frame {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+`
 
 const catMeta: Record<string, { icon: string; color: string }> = {
   Header: { icon: "⊤", color: "text-indigo-400" },
@@ -48,6 +146,11 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   const [openCat, setOpenCat] = useState<string | null>("Header")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
+
+  /* ── debug mode ── */
+  const searchParams = useSearchParams()
+  const isDebug = searchParams?.get("debug") === "true"
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({})
 
   const readSelectedMedia = useCallback((component: any): SelectedMedia => {
     if (!component) return null
@@ -96,7 +199,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   }, [selectedMedia])
 
   /* ── init GrapesJS ── */
-  const [useV2, setUseV2] = useState(true)
+  const [useV2, setUseV2] = useState(false)
 
   useEffect(() => {
     if (useV2) return; // Skip v1 init if v2 is active
@@ -150,6 +253,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
           styles: [
             "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
           ],
+          scripts: [],
         },
         blockManager: { custom: true },
       })
@@ -177,21 +281,60 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
       const validate = () => {
         const html = editor.getHtml() || ""
         setValidation({
-          hasHeader: html.includes("<header") || html.includes("data-gjs-type=\"header\""),
-          hasHero: html.includes("data-gjs-type=\"hero\""),
-          hasFooter: html.includes("<footer") || html.includes("data-gjs-type=\"footer\""),
+          hasHeader: html.includes("<header") || html.includes('data-gjs-type="header"'),
+          hasHero: html.includes('data-gjs-type="hero"'),
+          hasFooter: html.includes("<footer") || html.includes('data-gjs-type="footer"'),
         })
+        // Refresh debug info
+        if (isDebug) {
+          const blocks = editor.BlockManager.getAll()
+          setDebugInfo({
+            registeredBlocks: Object.keys(blocks).length,
+            blockIds: Object.keys(blocks),
+            componentCount: editor.getComponents?.().length ?? 0,
+            projectId,
+            hasHeader: html.includes("<header"),
+            hasHero: html.includes('data-gjs-type="hero"'),
+            hasFooter: html.includes("<footer"),
+          })
+        }
       }
       editor.on("component:add component:remove component:update", validate)
       validate()
 
-      // Load data
+      // Load data — never show blank canvas
       if (initialProject) {
         editor.loadProjectData(initialProject as any)
+      } else {
+        // Mount default starter composition so the editor is never blank
+        editor.setComponents(DEFAULT_PAGE_HTML)
+        editor.setStyle("")
       }
+
+      // Inject section boundary styles into the canvas
+      try {
+        const canvasDoc = editor.Canvas.getDocument()
+        if (canvasDoc) {
+          const styleEl = canvasDoc.createElement("style")
+          styleEl.setAttribute("data-hermes", "section-boundaries")
+          styleEl.textContent = CANVAS_SECTION_STYLES
+          canvasDoc.head.appendChild(styleEl)
+        }
+      } catch (_) { /* canvas may not be ready — styles still apply via config */ }
 
       gjsRef.current = editor
       setIsReady(true)
+
+      // Populate debug info
+      if (isDebug) {
+        const blocks = editor.BlockManager.getAll()
+        setDebugInfo({
+          registeredBlocks: Object.keys(blocks).length,
+          blockIds: Object.keys(blocks),
+          componentCount: editor.getComponents?.().length ?? 0,
+          projectId,
+        })
+      }
 
       // Keyboard delete shortcut
       const onKey = (e: KeyboardEvent) => {
@@ -533,7 +676,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
       </aside>
 
       {/* ── Canvas ── */}
-      <main className="flex-1 relative bg-slate-100 flex flex-col">
+      <main className="flex-1 relative bg-stone-100 flex flex-col">
         {/* Toolbar */}
         <div className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-6">
@@ -608,6 +751,41 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
             </div>
           )}
         </div>
+
+        {/* ── Runtime Debug Panel (hidden unless ?debug=true) ── */}
+        {isDebug && (
+          <div className="border-t border-amber-300 bg-amber-50 px-6 py-3 shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Bug className="w-3.5 h-3.5 text-amber-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Runtime Debug</span>
+              <button
+                onClick={async () => {
+                  const editor = gjsRef.current
+                  if (!editor) return
+                  const json = editor.getProjectData()
+                  const composition = {
+                    html: editor.getHtml(),
+                    css: editor.getCss(),
+                    projectData: json,
+                    blocks: Object.keys(editor.BlockManager.getAll()),
+                    componentCount: (editor.getComponents?.() as any)?.length ?? 0,
+                  }
+                  await navigator.clipboard.writeText(JSON.stringify(composition, null, 2))
+                }}
+                className="ml-auto flex items-center gap-1 px-2 py-1 rounded bg-amber-200 text-[10px] font-bold text-amber-800 hover:bg-amber-300 transition"
+              >
+                <Copy className="w-3 h-3" />
+                Copy State
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-3 text-[10px] font-mono text-amber-900">
+              <div><span className="text-amber-500">Blocks:</span> {String(debugInfo.registeredBlocks ?? "…")}</div>
+              <div><span className="text-amber-500">Components:</span> {String(debugInfo.componentCount ?? "…")}</div>
+              <div><span className="text-amber-500">Project:</span> {projectId.slice(0, 8)}…</div>
+              <div><span className="text-amber-500">Header:</span> {String(debugInfo.hasHeader ?? "…")} · <span className="text-amber-500">Hero:</span> {String(debugInfo.hasHero ?? "…")} · <span className="text-amber-500">Footer:</span> {String(debugInfo.hasFooter ?? "…")}</div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
