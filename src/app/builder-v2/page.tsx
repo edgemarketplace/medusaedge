@@ -671,6 +671,16 @@ export default function BuilderV2Page() {
                   <Layers className="h-3.5 w-3.5" />
                   Sections
                 </button>
+
+                {/* Import Inventory button */}
+                <span className="text-slate-200 mx-1">|</span>
+                <button
+                  onClick={() => router.push(`/builder-v2/inventory/${selectedTemplate?.id}`)}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold text-green-600 hover:text-green-700 hover:bg-green-50 transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Import Inventory
+                </button>
               </div>
             </div>
 
