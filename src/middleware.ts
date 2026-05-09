@@ -134,6 +134,10 @@ export async function middleware(request: NextRequest) {
   const cartIdCookie = request.cookies.get("_medusa_cart_id")
 
   const host = request.headers.get("host") || ""
+  
+  // DEBUGGING: Log host and subdomain
+  console.log("HOST:", host)
+  
   const isLocalhost = host.includes("localhost")
   const baseDomain = isLocalhost ? "localhost:8000" : "edgemarketplacehub.com"
   
@@ -141,10 +145,18 @@ export async function middleware(request: NextRequest) {
   const isSubdomain = host.endsWith(`.${baseDomain}`) && host !== `www.${baseDomain}`
   
   if (isSubdomain) {
-    const subdomain = host.split(".")[0]
-    // Rewrite to the internal tenant route
-    // We pass the subdomain as the tenantId for now
-    const response = NextResponse.rewrite(new URL(`/tenant/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+    const subdomain = host.replace(`.${baseDomain}`, "")
+    
+    // DEBUGGING: Log subdomain
+    console.log("SUBDOMAIN:", subdomain)
+    
+    // Rewrite to the storefront route
+    // This will be handled by /app/storefront/[tenant]/page.tsx
+    const response = NextResponse.rewrite(new URL(`/storefront/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
+    
+    // Set tenant header for downstream use
+    response.headers.set("x-tenant", subdomain)
+    
     return updateSession(request, response)
   }
 
