@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import { Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { getTemplate } from "@/templates/registry"
-import { composePage } from "@/composer"
+import { composePage, renderPage } from "@/composer"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
-import { createRoot, Root } from "react-dom/client"
-import { renderToStaticMarkup } from "react-dom/server"
+import { createRoot } from "react-dom/client"
 
 export default function GrapesBuilder({ templateId }: { templateId?: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -26,7 +25,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
 
   useEffect(() => {
     let destroyed = false
-    let root: Root | null = null
+    let root: any = null
 
     async function init() {
       try {
@@ -71,33 +70,33 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
             if (template) {
               const composition = composePage(template)
               
-              // Build HTML from composition sections
-              // For now, create a basic structure with section placeholders
-              // In production, you'd render each section component to HTML
-              let sectionsHtml = ''
-              if (composition.sections && Array.isArray(composition.sections)) {
-                composition.sections.forEach((section: any) => {
-                  sectionsHtml += `
-                    <div class="section-block" data-section-id="${section.sectionInstanceId}" data-section-type="${section.sectionId}">
-                      <div class="section-placeholder p-4 border border-dashed border-gray-300 rounded">
-                        <p class="text-sm text-gray-500">${section.sectionId.replace(/-/g, ' ').toUpperCase()}</p>
-                      </div>
-                    </div>
-                  `
-                })
-              }
+              // Render React elements to HTML using ReactDOM
+              const elements = renderPage(composition)
               
-              initialHtml = `
-                <div class="template-container" data-template="${templateId}">
-                  <div class="template-header p-4 bg-slate-100 border-b">
-                    <h1 class="text-xl font-bold">${template.name}</h1>
-                    <p class="text-sm text-gray-600">${template.description || ''}</p>
-                  </div>
-                  <div class="template-body">
-                    ${sectionsHtml}
-                  </div>
+              // Create a temporary div to render React elements
+              const tempDiv = document.createElement('div')
+              
+              // Use ReactDOM to render
+              const reactRoot = createRoot(tempDiv)
+              reactRoot.render(
+                <div className="template-composition">
+                  {elements.map((el, idx) => (
+                    <div key={idx} className="section-wrapper mb-4">
+                      {el}
+                    </div>
+                  ))}
                 </div>
-              `
+              )
+              
+              // Wait a bit for rendering to complete
+              await new Promise(r => setTimeout(r, 100))
+              
+              // Extract HTML from the temp div
+              initialHtml = tempDiv.innerHTML
+              
+              // Cleanup
+              reactRoot.unmount()
+              
               setMessage(`Loaded: ${template.name} (${composition.sections?.length || 0} sections)`)
             }
           } catch (e: any) {
@@ -116,7 +115,21 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         }
 
         setMessage('Adding content to editor...')
-        editor.setComponents(initialHtml)
+        
+        // Add CSP meta tag to allow eval in iframe
+        const htmlWithCSP = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+          </head>
+          <body>
+            ${initialHtml}
+          </body>
+          </html>
+        `
+        
+        editor.setComponents(htmlWithCSP)
         
         // Check iframe visibility
         await new Promise(r => setTimeout(r, 1000))
@@ -132,7 +145,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           }
           setIframeInfo(info)
           
-          // Force iframe visibility
+          // Force iframe visibility and size
           iframe.style.width = '100%'
           iframe.style.height = '100%'
           iframe.style.display = 'block'
@@ -161,9 +174,6 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         try {
           editorRef.current.destroy()
         } catch (e) {}
-      }
-      if (root) {
-        root.unmount()
       }
     }
   }, [templateId])
