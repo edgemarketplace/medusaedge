@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { slideUp, fadeIn } from '../../motion/presets';
+import { slideUp, fadeIn } from '@/motion/presets';
 
 const HeroEditorial = ({ 
   headline = "The Fall Edit", 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { scaleHover, slideUp } from '../../motion/presets';
+import { scaleHover, slideUp } from '@/motion/presets';
 
 const ProductCard = ({ product }) => (
   <motion.div 
