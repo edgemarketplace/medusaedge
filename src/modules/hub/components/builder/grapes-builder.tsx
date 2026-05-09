@@ -54,6 +54,9 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
             ],
           },
         })
+        
+        // Expose editor globally for debugging
+        (window as any).editor = editor
 
         // Register all 30 pre-approved blocks
         setMessage('Registering blocks...')
@@ -114,6 +117,9 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
             </div>
           `
         }
+        
+        console.log('[GrapesBuilder] initialHtml length:', initialHtml.length)
+        console.log('[GrapesBuilder] initialHtml preview:', initialHtml.substring(0, 200))
 
         setMessage('Adding content to editor...')
         
@@ -135,8 +141,8 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           setIframeInfo(info)
           
           // Force iframe visibility and size
-          iframe.style.width = '100%'
-          iframe.style.height = '100%'
+          iframe.style.width = '1200px'
+          iframe.style.height = '800px'
           iframe.style.display = 'block'
           iframe.style.visibility = 'visible'
           iframe.style.position = 'absolute'
