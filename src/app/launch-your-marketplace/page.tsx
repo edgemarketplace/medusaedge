@@ -168,7 +168,7 @@ export default function LaunchMarketplacePage() {
           <p className="text-sm font-bold">Web Builder (Full Page)</p>
           <button onClick={() => setStep(3)} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-bold">Continue →</button>
         </div>
-        <iframe title="Builder" src={`/builder/${projectId}`} className="h-[calc(100vh-56px)] w-full" />
+        <iframe title="Builder" src={`/builder-v2/editor/template-clothing-marketplace`} className="h-[calc(100vh-56px)] w-full" />
       </main>
     )
   }
