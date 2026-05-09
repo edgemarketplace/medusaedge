@@ -10,72 +10,72 @@ interface GrapesEditorProps {
   templateId: string
 }
 
-// Helper to render section content from props - dynamic based on props, not section ID
+// Helper to render section content from props - using Tailwind utility classes
 function renderSectionContent(section: { sectionId: string; props: Record<string, any> }): string {
   const props = section.props
   
-  // Build content based on available props (not section ID)
+  // Build content based on available props using Tailwind classes
   let content = ''
   
-  // Headline/title (most sections have this)
+  // Headline/title
   if (props.headline || props.title) {
     const text = props.headline || props.title
-    content += `<div class="section-headline">${text}</div>`
+    content += `<div class="text-4xl md:text-5xl font-bold mb-4">${text}</div>`
   }
   
   // Subheadline
   if (props.subheadline) {
-    content += `<div class="section-subheadline">${props.subheadline}</div>`
+    content += `<div class="text-lg text-gray-600 mb-6 max-w-2xl">${props.subheadline}</div>`
   }
   
   // Brand name
   if (props.brand) {
-    content += `<div class="section-brand">${props.brand}</div>`
+    content += `<div class="text-3xl font-bold mb-4">${props.brand}</div>`
   }
   
   // Description
   if (props.description) {
-    content += `<div class="section-description">${props.description}</div>`
+    content += `<div class="text-gray-600 mb-4">${props.description}</div>`
   }
   
   // Announcement text
   if (props.text) {
-    content += `<div class="announcement-text">${props.text}</div>`
+    content += `<div class="text-white text-center text-sm">${props.text}</div>`
   }
   
   // CTA button
   if (props.cta) {
-    content += `<button class="section-cta">${props.cta}</button>`
+    content += `<button class="bg-black text-white px-8 py-3 font-semibold hover:bg-gray-800 transition">${props.cta}</button>`
   }
   
-  // Items list (proof-strip, trust-strip, etc.)
+  // Items list
   if (props.items && Array.isArray(props.items)) {
-    content += `<div class="section-items">${props.items.map((item: string) => `<span class="item">${item}</span>`).join(' | ')}</div>`
+    content += `<div class="flex gap-8 justify-center py-4 border-t border-b border-gray-200">${props.items.map((item: string) => `<span class="text-sm text-gray-700 font-medium">${item}</span>`).join('')}</div>`
   }
   
-  // Links (header navigation)
+  // Links
   if (props.links && Array.isArray(props.links)) {
-    content += `<div class="section-links">${props.links.join(' | ')}</div>`
+    content += `<div class="flex gap-6 text-sm text-gray-600">${props.links.map((link: string) => `<span>${link}</span>`).join('')}</div>`
   }
   
-  // Categories (shop by use case)
+  // Categories
   if (props.categories && Array.isArray(props.categories)) {
-    content += `<div class="section-categories">${props.categories.map((cat: string) => `<span class="category">${cat}</span>`).join(' ')}</div>`
+    content += `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">${props.categories.map((cat: string) => `<div class="bg-gray-100 p-6 text-center font-semibold rounded-lg">${cat}</div>`).join('')}</div>`
   }
   
   // Product limit
   if (props.limit) {
-    content += `<div class="product-limit">Showing ${props.limit} products</div>`
+    content += `<div class="text-sm text-gray-600 mt-4">Showing ${props.limit} products</div>`
   }
   
   // Background image hint
   if (props.backgroundImage) {
-    content += `<div class="section-bg-hint" style="font-size:11px;color:#999;">[Background: ${props.backgroundImage.substring(0, 50)}...]</div>`
+    content += `<div class="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-500">Background: ${props.backgroundImage.substring(0, 50)}...</div>`
   }
   
-  // Fallback if no recognized props
+  // Fallback
   if (!content) {
-    content = `<div>Content for ${section.sectionId}</div>`
+    content = `<div class="text-gray-400">Content for ${section.sectionId}</div>`
   }
   
   return content
