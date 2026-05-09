@@ -173,7 +173,7 @@ export default function TemplateDetailPage() {
               
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-                  Best for: {template.bestFor?.join(', ') || 'General'}
+                  Best for: {template.bestFor || 'General'}
                 </span>
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
                   Theme: {composition.theme}
@@ -182,9 +182,9 @@ export default function TemplateDetailPage() {
 
               {/* Sections List */}
               <div>
-                <h4 className="text-sm font-bold text-slate-700 mb-3">Sections ({template.composition.sections.length})</h4>
+                <h4 className="text-sm font-bold text-slate-700 mb-3">Sections ({Array.isArray(template.composition.sections) ? template.composition.sections.length : 0})</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {template.composition.sections.map((section, idx) => (
+                  {Array.isArray(template.composition.sections) && template.composition.sections.map((section, idx) => (
                     <div 
                       key={section.sectionInstanceId || idx}
                       className="px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-600 border border-slate-100"
@@ -203,7 +203,7 @@ export default function TemplateDetailPage() {
                 Theme Variants
               </h4>
               <div className="space-y-2">
-                {(template.themeVariants || []).map((variant) => (
+                {Array.isArray(template.themeVariants) && template.themeVariants.map((variant) => (
                   <button
                     key={variant}
                     onClick={() => handleThemeVariantChange(variant)}
