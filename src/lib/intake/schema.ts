@@ -120,6 +120,23 @@ export function getTemplateById(id: string) {
   return marketplaceTemplates.find((template) => template.id === id) || marketplaceTemplates[0]
 }
 
+/** Map old marketplace template IDs → Antigravity blueprint IDs */
+export const TEMPLATE_TO_ANTIGRAVITY_MAP: Record<string, string> = {
+  "template-clothing-marketplace": "studio-mode-apparel",
+  "template-beauty-wellness-marketplace": "clean-beauty-ritual",
+  "template-fitness-coaching-marketplace": "performance-activewear",
+  "template-home-goods-furniture-marketplace": "modern-home-essentials",
+  "template-creator-digital-products-marketplace": "maker-marketplace-showcase",
+  "template-home-services-marketplace": "local-repair-parts",
+  "template-diy-maker-marketplace": "maker-marketplace-showcase",
+  "template-course-education-marketplace": "educational-toys-learning",
+  "template-medusa-b2b-marketplace": "wholesale-catalog-pro",
+}
+
+export function getAntigravityTemplateId(marketplaceTemplateId: string): string {
+  return TEMPLATE_TO_ANTIGRAVITY_MAP[marketplaceTemplateId] || "studio-mode-apparel"
+}
+
 export function slugifyBusinessName(value: string) {
   return value
     .toLowerCase()
