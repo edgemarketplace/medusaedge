@@ -10,31 +10,75 @@ interface GrapesEditorProps {
   templateId: string
 }
 
-// Helper to render section content from props
+// Helper to render section content from props - dynamic based on props, not section ID
 function renderSectionContent(section: { sectionId: string; props: Record<string, any> }): string {
   const props = section.props
-  switch (section.sectionId) {
-    case 'announcement-bar':
-      return `<div class="announcement-text">${props.text || 'Announcement text here'}</div>`
-    case 'header-navigation':
-      return `<div class="header-brand">${props.brand || 'Brand'}</div><div class="header-links">${props.links?.join(' | ') || ''}</div>`
-    case 'hero-split':
-      return `<div class="hero-headline">${props.headline || 'Headline'}</div><div class="hero-subheadline">${props.subheadline || 'Subheadline'}</div><button class="hero-cta">${props.cta || 'CTA'}</button>`
-    case 'proof-strip':
-      return `<div class="proof-items">${(props.items || []).map((item: string) => `<span class="proof-item">${item}</span>`).join(' | ')}</div>`
-    case 'shop-by-use-case':
-      return `<div class="shop-title">${props.title || 'Shop by Category'}</div><div class="shop-categories">${(props.categories || []).map((cat: string) => `<span class="category">${cat}</span>`).join(' ')}</div>`
-    case 'comparison-table':
-      return `<div class="comparison-headline">${props.headline || 'Comparison'}</div>`
-    case 'product-grid':
-      return `<div class="product-title">${props.title || 'Products'}</div><div class="product-limit">Showing ${props.limit || 4} products</div>`
-    case 'loyalty-cta':
-      return `<div class="loyalty-headline">${props.headline || 'Loyalty Program'}</div>`
-    case 'footer-standard':
-      return `<div class="footer-brand">${props.brand || 'Brand'}</div><div class="footer-description">${props.description || 'Description'}</div>`
-    default:
-      return `<div>Content for ${section.sectionId}</div>`
+  
+  // Build content based on available props (not section ID)
+  let content = ''
+  
+  // Headline/title (most sections have this)
+  if (props.headline || props.title) {
+    const text = props.headline || props.title
+    content += `<div class="section-headline">${text}</div>`
   }
+  
+  // Subheadline
+  if (props.subheadline) {
+    content += `<div class="section-subheadline">${props.subheadline}</div>`
+  }
+  
+  // Brand name
+  if (props.brand) {
+    content += `<div class="section-brand">${props.brand}</div>`
+  }
+  
+  // Description
+  if (props.description) {
+    content += `<div class="section-description">${props.description}</div>`
+  }
+  
+  // Announcement text
+  if (props.text) {
+    content += `<div class="announcement-text">${props.text}</div>`
+  }
+  
+  // CTA button
+  if (props.cta) {
+    content += `<button class="section-cta">${props.cta}</button>`
+  }
+  
+  // Items list (proof-strip, trust-strip, etc.)
+  if (props.items && Array.isArray(props.items)) {
+    content += `<div class="section-items">${props.items.map((item: string) => `<span class="item">${item}</span>`).join(' | ')}</div>`
+  }
+  
+  // Links (header navigation)
+  if (props.links && Array.isArray(props.links)) {
+    content += `<div class="section-links">${props.links.join(' | ')}</div>`
+  }
+  
+  // Categories (shop by use case)
+  if (props.categories && Array.isArray(props.categories)) {
+    content += `<div class="section-categories">${props.categories.map((cat: string) => `<span class="category">${cat}</span>`).join(' ')}</div>`
+  }
+  
+  // Product limit
+  if (props.limit) {
+    content += `<div class="product-limit">Showing ${props.limit} products</div>`
+  }
+  
+  // Background image hint
+  if (props.backgroundImage) {
+    content += `<div class="section-bg-hint" style="font-size:11px;color:#999;">[Background: ${props.backgroundImage.substring(0, 50)}...]</div>`
+  }
+  
+  // Fallback if no recognized props
+  if (!content) {
+    content = `<div>Content for ${section.sectionId}</div>`
+  }
+  
+  return content
 }
 
 // Generate HTML structure from template sections with actual content
@@ -47,22 +91,19 @@ function generateTemplateHTML(template: TemplateBlueprint): string {
         body { font-family: sans-serif; margin: 0; padding: 20px; }
         .section { border: 1px dashed #ccc; padding: 20px; margin: 10px 0; }
         .section-title { color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; }
-        .announcement-text { background: #f0f0f0; padding: 8px; border-radius: 4px; }
-        .header-brand { font-weight: bold; font-size: 24px; margin-bottom: 8px; }
-        .header-links { color: #666; }
-        .hero-headline { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
-        .hero-subheadline { color: #666; margin-bottom: 16px; }
-        .hero-cta { background: #000; color: #fff; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
-        .proof-items { color: #666; font-size: 14px; }
-        .proof-item { margin-right: 16px; }
-        .shop-title { font-size: 24px; font-weight: bold; margin-bottom: 16px; }
-        .shop-categories { display: flex; gap: 16px; }
+        .section-headline { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
+        .section-subheadline { color: #666; margin-bottom: 16px; font-size: 16px; }
+        .section-brand { font-weight: bold; font-size: 24px; margin-bottom: 8px; }
+        .section-description { color: #666; margin-bottom: 12px; }
+        .announcement-text { background: #f0f0f0; padding: 8px 16px; border-radius: 4px; display: inline-block; }
+        .section-cta { background: #000; color: #fff; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+        .section-items { color: #666; font-size: 14px; margin-top: 8px; }
+        .item { margin-right: 16px; }
+        .section-links { color: #666; margin-top: 8px; }
+        .section-categories { display: flex; gap: 16px; margin-top: 12px; }
         .category { background: #f0f0f0; padding: 8px 16px; border-radius: 4px; }
-        .product-title { font-size: 24px; font-weight: bold; margin-bottom: 16px; }
-        .product-limit { color: #666; }
-        .loyalty-headline { font-size: 24px; font-weight: bold; margin-bottom: 16px; }
-        .footer-brand { font-weight: bold; margin-bottom: 8px; }
-        .footer-description { color: #666; }
+        .product-limit { color: #666; margin-top: 8px; }
+        .section-bg-hint { margin-top: 8px; }
       </style>
     </head>
     <body>
