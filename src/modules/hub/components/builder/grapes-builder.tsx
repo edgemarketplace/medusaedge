@@ -32,28 +32,40 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         setStatus('loading')
         setMessage('Importing GrapesJS...')
         
-        const grapesjs = (await import("grapesjs")).default
+        const grapesjsModule = await import("grapesjs")
+        console.log('[GrapesBuilder] grapesjs module:', grapesjsModule)
+        console.log('[GrapesBuilder] grapesjs.default:', typeof grapesjsModule.default)
+        
+        const grapesjs = grapesjsModule.default || grapesjsModule
+        console.log('[GrapesBuilder] grapesjs (final):', typeof grapesjs)
         
         if (destroyed) return
         
         setMessage('Creating editor...')
         
-        const editor = grapesjs.init({
-          container: containerRef.current!,
-          height: '100%',
-          width: '100%',
-          storageManager: false,
-          fromElement: false,
-          blockManager: {
-            appendTo: '.block-panel',
-          },
-          canvas: {
-            styles: [
-              'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
-              'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
-            ],
-          },
-        })
+        let editor
+        try {
+          editor = grapesjs.init({
+            container: containerRef.current!,
+            height: '100%',
+            width: '100%',
+            storageManager: false,
+            fromElement: false,
+            blockManager: {
+              appendTo: '.block-panel',
+            },
+            canvas: {
+              styles: [
+                'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
+                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+              ],
+            },
+          })
+          console.log('[GrapesBuilder] Editor created successfully')
+        } catch (initErr) {
+          console.error('[GrapesBuilder] Init error:', initErr)
+          throw initErr
+        }
         
         // Register all 30 pre-approved blocks
         setMessage('Registering blocks...')
