@@ -122,6 +122,16 @@ export default function TemplateDetailPage() {
               <ExternalLink className="h-4 w-4" />
               Use This Template
             </Link>
+            
+            {/* NEW: Puck Editor Button */}
+            <Link
+              href={`/builder-v2/puck/${params.templateId}`}
+              className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition font-semibold text-sm shadow-sm shadow-violet-200"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Try Puck Editor
+              <span className="ml-1 px-1.5 py-0.5 bg-violet-500 text-[10px] font-bold rounded uppercase">NEW</span>
+            </Link>
           </div>
         </div>
       </div>

@@ -177,12 +177,23 @@ export default function InventoryPage() {
             <p className="text-green-700 mb-4">
               Your products are parsed and ready for Medusa import.
             </p>
-            <button
-              onClick={() => router.push(`/builder-v2/editor/${params.templateId}`)}
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-            >
-              Continue to Editor →
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push(`/builder-v2/editor/${params.templateId}`)}
+                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+              >
+                Continue to Editor →
+              </button>
+              
+              {/* NEW: Puck Editor Button */}
+              <button
+                onClick={() => router.push(`/builder-v2/puck/${params.templateId}`)}
+                className="bg-violet-600 text-white px-6 py-2 rounded hover:bg-violet-700 flex items-center gap-2"
+              >
+                Try Puck Editor
+                <span className="px-1.5 py-0.5 bg-violet-500 text-[10px] font-bold rounded uppercase">NEW</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

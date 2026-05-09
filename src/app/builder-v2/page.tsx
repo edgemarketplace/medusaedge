@@ -374,9 +374,9 @@ function SectionSidebar({
   )
 }
 
-/* ──────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────
  * TopBar — shown when in "composed" view
- * ────────────────────────────────────────────────────────────── */
+ * ────────────────────────────────────────────────────────── */
 function TopBar({
   templateName,
   themeVariants,
@@ -384,6 +384,7 @@ function TopBar({
   onThemeVariantChange,
   onBackToTemplates,
   onContinueToEditor,
+  onContinueToPuckEditor,
   isEditorReady,
 }: {
   templateName: string
@@ -392,6 +393,7 @@ function TopBar({
   onThemeVariantChange: (variant: ThemeVariant) => void
   onBackToTemplates: () => void
   onContinueToEditor: () => void
+  onContinueToPuckEditor: () => void
   isEditorReady: boolean
 }) {
   return (
@@ -446,6 +448,21 @@ function TopBar({
       >
         <ExternalLink className="h-4 w-4" />
         Edit in GrapesJS
+      </button>
+      
+      {/* NEW: Try Puck Editor */}
+      <button
+        onClick={onContinueToPuckEditor}
+        disabled={!isEditorReady}
+        className={`shrink-0 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+          isEditorReady
+            ? "bg-violet-600 text-white hover:bg-violet-700 shadow-sm shadow-violet-200"
+            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+        }`}
+      >
+        <ExternalLink className="h-4 w-4" />
+        Try Puck Editor
+        <span className="ml-1 px-1.5 py-0.5 bg-violet-500 text-[10px] font-bold rounded uppercase">NEW</span>
       </button>
     </div>
   )
@@ -518,6 +535,12 @@ export default function BuilderV2Page() {
     router.push(`/builder-v2/editor/${selectedTemplate.id}`)
   }, [selectedTemplate, router])
 
+  /* ── NEW: Continue to Puck Editor ── */
+  const handleContinueToPuckEditor = useCallback(() => {
+    if (!selectedTemplate) return
+    router.push(`/builder-v2/puck/${selectedTemplate.id}`)
+  }, [selectedTemplate, router])
+
   
 
 
@@ -552,6 +575,37 @@ export default function BuilderV2Page() {
               Each one is a composable blueprint that you can customize
               in the visual editor.
             </p>
+          </motion.div>
+
+          {/* NEW: Puck Editor Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8 max-w-2xl mx-auto bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-4 sm:p-6 shadow-lg shadow-violet-200"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-sm sm:text-base">NEW: Puck Editor Available!</h3>
+                  <p className="text-violet-100 text-xs sm:text-sm mt-0.5">
+                    Try our React-native visual editor with theme tokens & real-time preview
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/builder-v2/puck/studio-mode-apparel"
+                className="shrink-0 bg-white text-violet-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-violet-50 transition flex items-center gap-2"
+              >
+                Try Puck Editor
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </motion.div>
 
           {/* Template selector */}
@@ -616,6 +670,7 @@ export default function BuilderV2Page() {
           onThemeVariantChange={handleThemeVariantChange}
           onBackToTemplates={handleBackToTemplates}
           onContinueToEditor={handleContinueToEditor}
+          onContinueToPuckEditor={handleContinueToPuckEditor}
           isEditorReady={!!composition}
         />
 
