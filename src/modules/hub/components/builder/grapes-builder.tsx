@@ -38,130 +38,142 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
   const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
   const [openCat, setOpenCat] = useState<string | null>("Header")
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   /* ── init GrapesJS ── */
   useEffect(() => {
     let destroyed = false
 
     async function init() {
-      const grapesjs = (await import("grapesjs")).default
-      if (destroyed) return
+      try {
+        console.log('Initializing GrapesJS...')
+        const grapesjs = (await import("grapesjs")).default
+        if (destroyed) return
 
-      const editor = grapesjs.init({
-        container: containerRef.current!,
-        fromElement: false,
-        height: "100%",
-        width: "100%",
-        storageManager: false,
-        assetManager: false,
-        panels: { defaults: [] },
-        layerManager: { showWrapper: false, showDevices: false },
-        selectorManager: { componentFirst: true },
-        styleManager: {
-          sectors: [
-            {
-              name: "Typography",
-              properties: [
-                "font-size",
-                "font-family",
-                "color",
-                "text-align",
-                "line-height",
-              ],
-            },
-            {
-              name: "Spacing",
-              properties: ["padding", "margin"],
-            },
-            {
-              name: "Decorations",
-              properties: ["background-color", "border-radius", "border"],
-            },
-          ],
-        },
-        traitManager: { disabled: true },
-        deviceManager: {
-          devices: [
-            { name: "Desktop", width: "100%" },
-            { name: "Mobile", width: "375px" },
-          ],
-        },
-        canvas: {
-          styles: [
-            "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
-          ],
-        },
-        blockManager: { custom: true },
-      })
-
-      editor.Panels.removePanel("options")
-      editor.Panels.removePanel("views")
-
-      // Wire up our blocks (they still register so traits/defaults are defined)
-      registerBlocks(editor)
-
-      // Track selected component
-      editor.on("component:selected", (c: any) => {
-        setSelectedId(c?.getId?.() || null)
-      })
-      editor.on("component:deselected", () => setSelectedId(null))
-
-      // Validation
-      const validate = () => {
-        const html = editor.getHtml() || ""
-        setValidation({
-          hasHeader: html.includes("<header") || html.includes("data-gjs-type=\"header\""),
-          hasHero: html.includes("data-gjs-type=\"hero\""),
-          hasFooter: html.includes("<footer") || html.includes("data-gjs-type=\"footer\""),
+        console.log('GrapesJS loaded, initializing editor...')
+        const editor = grapesjs.init({
+          container: containerRef.current!,
+          fromElement: false,
+          height: "100%",
+          width: "100%",
+          storageManager: false,
+          assetManager: false,
+          panels: { defaults: [] },
+          layerManager: { showWrapper: false, showDevices: false },
+          selectorManager: { componentFirst: true },
+          styleManager: {
+            sectors: [
+              {
+                name: "Typography",
+                properties: [
+                  "font-size",
+                  "font-family",
+                  "color",
+                  "text-align",
+                  "line-height",
+                ],
+              },
+              {
+                name: "Spacing",
+                properties: ["padding", "margin"],
+              },
+              {
+                name: "Decorations",
+                properties: ["background-color", "border-radius", "border"],
+              },
+            ],
+          },
+          traitManager: { disabled: true },
+          deviceManager: {
+            devices: [
+              { name: "Desktop", width: "100%" },
+              { name: "Mobile", width: "375px" },
+            ],
+          },
+          canvas: {
+            styles: [
+              "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
+            ],
+          },
+          blockManager: { custom: true },
         })
-      }
-      editor.on("component:add component:remove component:update", validate)
-      validate()
 
-      // Load data
-      if (templateId) {
-        try {
-          const tpl = getTemplate(templateId)
-          if (tpl) {
-            // Build HTML from template sections with actual content
-            const html = tpl.composition.sections.map(s => {
-              const props = s.props || {}
-              const sectionHTML = `
-                <div data-gjs-type="section" class="my-4 p-6 border border-gray-200 rounded-lg bg-white">
-                  <div class="text-sm font-bold text-gray-400 mb-2">${s.sectionId}</div>
-                  ${props.headline ? `<h2 class="text-3xl font-bold mb-3">${props.headline}</h2>` : ''}
-                  ${props.subheadline ? `<p class="text-gray-600 mb-4">${props.subheadline}</p>` : ''}
-                  ${props.brand ? `<div class="text-2xl font-bold mb-3">${props.brand}</div>` : ''}
-                  ${props.text ? `<p class="text-gray-700">${props.text}</p>` : ''}
-                  ${props.cta ? `<button class="mt-4 px-6 py-2 bg-black text-white rounded">${props.cta}</button>` : ''}
-                </div>
-              `
-              return sectionHTML
-            }).join('\n')
-            editor.setComponents(html)
-          }
-        } catch (e) { 
-          console.error('Failed to load template:', e)
+        console.log('GrapesJS editor initialized successfully')
+        editor.Panels.removePanel("options")
+        editor.Panels.removePanel("views")
+
+        // Wire up our blocks (they still register so traits/defaults are defined)
+        registerBlocks(editor)
+
+        // Track selected component
+        editor.on("component:selected", (c: any) => {
+          setSelectedId(c?.getId?.() || null)
+        })
+        editor.on("component:deselected", () => setSelectedId(null))
+
+        // Validation
+        const validate = () => {
+          const html = editor.getHtml() || ""
+          setValidation({
+            hasHeader: html.includes("<header") || html.includes("data-gjs-type=\"header\""),
+            hasHero: html.includes("data-gjs-type=\"hero\""),
+            hasFooter: html.includes("<footer") || html.includes("data-gjs-type=\"footer\""),
+          })
         }
-      } else if (initialProject) {
-        editor.loadProjectData(initialProject as any)
-      }
+        editor.on("component:add component:remove component:update", validate)
+        validate()
 
-      gjsRef.current = editor
-      setIsReady(true)
+        // Load data
+        if (templateId) {
+          try {
+            const tpl = getTemplate(templateId)
+            if (tpl) {
+              // Build HTML from template sections with actual content
+              const html = tpl.composition.sections.map(s => {
+                const props = s.props || {}
+                const sectionHTML = `
+                  <div data-gjs-type="section" class="my-4 p-6 border border-gray-200 rounded-lg bg-white">
+                    <div class="text-sm font-bold text-gray-400 mb-2">${s.sectionId}</div>
+                    ${props.headline ? `<h2 class="text-3xl font-bold mb-3">${props.headline}</h2>` : ''}
+                    ${props.subheadline ? `<p class="text-gray-600 mb-4">${props.subheadline}</p>` : ''}
+                    ${props.brand ? `<div class="text-2xl font-bold mb-3">${props.brand}</div>` : ''}
+                    ${props.text ? `<p class="text-gray-700">${props.text}</p>` : ''}
+                    ${props.cta ? `<button class="mt-4 px-6 py-2 bg-black text-white rounded">${props.cta}</button>` : ''}
+                  </div>
+                `
+                return sectionHTML
+              }).join('\n')
+              editor.setComponents(html)
+            }
+          } catch (e: any) { 
+            console.error('Failed to load template:', e)
+          }
+        } else if (initialProject) {
+          editor.loadProjectData(initialProject as any)
+        }
 
-      // Keyboard delete shortcut
-      const onKey = (e: KeyboardEvent) => {
-        if ((e.key === "Delete" || e.key === "Backspace") && editor.getSelected()) {
-          // Only delete if not actively editing text
-          if (!editor.getEditing()) {
-            editor.runCommand("core:component-delete")
+        gjsRef.current = editor
+        setIsReady(true)
+        setError(null)
+
+        // Keyboard delete shortcut
+        const onKey = (e: KeyboardEvent) => {
+          if ((e.key === "Delete" || e.key === "Backspace") && editor.getSelected()) {
+            // Only delete if not actively editing text
+            if (!editor.getEditing()) {
+              editor.runCommand("core:component-delete")
+            }
           }
         }
-      }
-      window.addEventListener("keydown", onKey)
+        window.addEventListener("keydown", onKey)
 
-      return () => window.removeEventListener("keydown", onKey)
+        return () => window.removeEventListener("keydown", onKey)
+
+      } catch (err: any) {
+        console.error('Failed to initialize GrapesJS:', err)
+        setError(err.message || 'Failed to load editor')
+        setIsReady(false)
+      }
     }
 
     init()
@@ -266,6 +278,24 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
     cat,
     blocks: allBlocks.filter((b) => b.category === cat.name),
   }))
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center max-w-md px-4">
+          <h2 className="text-xl font-bold text-red-400 mb-4">Editor Failed to Load</h2>
+          <p className="text-slate-400 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen w-full bg-white overflow-hidden">
@@ -456,7 +486,7 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
 
         {/* Canvas */}
         <div className="flex-1 relative bg-gray-100 min-h-0">
-          {!isReady && (
+          {!isReady && !error && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
               <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
             </div>
