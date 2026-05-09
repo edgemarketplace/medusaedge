@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useState, useCallback } from "react"
 import GrapesBuilder from "@/modules/hub/components/builder/grapes-builder"
 import { useParams } from "next/navigation"
 
-function BuilderContent() {
+export default function BuilderPage() {
   const params = useParams()
   const projectId = String(params.projectId || "")
 
@@ -64,17 +64,5 @@ function BuilderContent() {
       onSaveDraft={handleSaveDraft}
       onDeploy={handleDeploy}
     />
-  )
-}
-
-export default function BuilderPage() {
-  return (
-    <Suspense fallback={
-      <div className="h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
-        Loading builder...
-      </div>
-    }>
-      <BuilderContent />
-    </Suspense>
   )
 }

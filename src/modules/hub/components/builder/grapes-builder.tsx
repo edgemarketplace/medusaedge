@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
-import { useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import type grapesjs from "grapesjs"
 import GrapesJSEditor from "@/GrapesJSEditor"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
@@ -148,8 +147,10 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
 
   /* ── debug mode ── */
-  const searchParams = useSearchParams()
-  const isDebug = searchParams?.get("debug") === "true"
+  const isDebug = useMemo(() => {
+    if (typeof window === "undefined") return false
+    return new URLSearchParams(window.location.search).get("debug") === "true"
+  }, [])
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({})
 
   const readSelectedMedia = useCallback((component: any): SelectedMedia => {
