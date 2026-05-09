@@ -10,10 +10,10 @@
 // ══════════════════════════════════════════════════════════════════
 
 import type { Config, Data } from "@puckeditor/core"
-import type { TemplateBlueprint } from "@/templates/registry/types"
-import { getTemplate } from "@/templates/registry"
-import { composePage } from "@/composer"
-import { sectionRegistry } from "@/sections"
+import type { TemplateBlueprint, SectionBlueprint } from "../../templates/registry/types"
+import { getTemplate } from "../../templates/registry"
+import { composePage, CompositionResult } from "../../composer"
+import { sectionRegistry, RegistryEntry } from "../../sections"
 
 // Map section schema field types to Puck field types
 function mapFieldType(type: string): string {
@@ -23,7 +23,7 @@ function mapFieldType(type: string): string {
     number: "number",
     select: "select",
     image: "text", // Puck doesn't have native image picker yet
-    boolean: "select", // Use select with true/false
+    boolean: "select",
   }
   return typeMap[type] || "text"
 }
@@ -32,13 +32,20 @@ function mapFieldType(type: string): string {
 export function getPuckConfig(): Config["components"] {
   const components: Config["components"] = {}
 
-  for (const [sectionId, entry] of Object.entries(sectionRegistry)) {
+  console.log("[Puck Converter] Section registry keys:", Object.keys(sectionRegistry))
+
+  for (const [sectionId, entry] of Object.entries(sectionRegistry) as [string, RegistryEntry][]) {
     // Skip if no schema defined
-    if (!entry.schema) continue
+    if (!entry.schema) {
+      console.log(`[Puck Converter] Skipping ${sectionId} - no schema`)
+      continue
+    }
+
+    console.log(`[Puck Converter] Processing ${sectionId}:`, entry.schema)
 
     // Convert schema to Puck fields
     const fields: Record<string, any> = {}
-    for (const [fieldName, fieldDef] of Object.entries(entry.schema)) {
+    for (const [fieldName, fieldDef] of Object.entries(entry.schema) as [string, any][]) {
       fields[fieldName] = {
         type: mapFieldType(fieldDef.type),
         label: fieldDef.label || fieldName,
@@ -57,6 +64,7 @@ export function getPuckConfig(): Config["components"] {
     }
   }
 
+  console.log("[Puck Converter] Generated Puck config:", Object.keys(components))
   return components
 }
 
@@ -68,8 +76,12 @@ export function getPuckData(templateId: string): Data | null {
     return null
   }
 
+  console.log(`[Puck Converter] Loading template: ${templateId}`, template)
+
   // Compose the page (resolves sections to React components)
-  const composition = composePage(template)
+  const composition: CompositionResult = composePage(template)
+
+  console.log("[Puck Converter] Composition result:", composition)
 
   // Convert sections to Puck content format
   const content = composition.sections.map((section) => ({
@@ -87,5 +99,6 @@ export function getPuckData(templateId: string): Data | null {
     zones: {},
   }
 
+  console.log("[Puck Converter] Puck data:", data)
   return data
 }
