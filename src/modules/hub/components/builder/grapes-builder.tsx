@@ -51,7 +51,7 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
         container: containerRef.current!,
         fromElement: false,
         height: "100%",
-        width: "auto",
+        width: "100%",
         storageManager: false,
         assetManager: false,
         panels: { defaults: [] },
@@ -123,12 +123,26 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
         try {
           const tpl = getTemplate(templateId)
           if (tpl) {
-            const html = tpl.composition.sections.map(s => 
-              `<div data-gjs-type="section" class="p-4 my-2 border border-gray-200">${s.sectionId}</div>`
-            ).join('\n')
+            // Build HTML from template sections with actual content
+            const html = tpl.composition.sections.map(s => {
+              const props = s.props || {}
+              const sectionHTML = `
+                <div data-gjs-type="section" class="my-4 p-6 border border-gray-200 rounded-lg bg-white">
+                  <div class="text-sm font-bold text-gray-400 mb-2">${s.sectionId}</div>
+                  ${props.headline ? `<h2 class="text-3xl font-bold mb-3">${props.headline}</h2>` : ''}
+                  ${props.subheadline ? `<p class="text-gray-600 mb-4">${props.subheadline}</p>` : ''}
+                  ${props.brand ? `<div class="text-2xl font-bold mb-3">${props.brand}</div>` : ''}
+                  ${props.text ? `<p class="text-gray-700">${props.text}</p>` : ''}
+                  ${props.cta ? `<button class="mt-4 px-6 py-2 bg-black text-white rounded">${props.cta}</button>` : ''}
+                </div>
+              `
+              return sectionHTML
+            }).join('\n')
             editor.setComponents(html)
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) { 
+          console.error('Failed to load template:', e)
+        }
       } else if (initialProject) {
         editor.loadProjectData(initialProject as any)
       }
@@ -441,13 +455,13 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
         </header>
 
         {/* Canvas */}
-        <div className="flex-1 relative bg-gray-100">
+        <div className="flex-1 relative bg-gray-100 min-h-0">
           {!isReady && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
               <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
             </div>
           )}
-          <div ref={containerRef} className="h-full w-full" />
+          <div ref={containerRef} className="absolute inset-0" />
         </div>
       </div>
     </div>
