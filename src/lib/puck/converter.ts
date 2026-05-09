@@ -86,9 +86,8 @@ export function getPuckConfig(
     components[sectionId] = {
       fields,
       render: (props: any) => {
-        // Inject theme into component props
-        // Components should accept `theme` as second arg or use context
-        return <Component {...props} theme={theme} />
+        // Inject theme into component props using createElement (avoid JSX in .ts)
+        return React.createElement(Component, { ...props, theme })
       },
       // Puck 0.21+ API: add labels for better UX
       label: sectionId,
