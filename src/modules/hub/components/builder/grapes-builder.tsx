@@ -142,7 +142,7 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   const [deploying, setDeploying] = useState(false)
   const [validation, setValidation] = useState({ hasHeader: false, hasHero: false, hasFooter: false })
   const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
-  const [sidebarMode, setSidebarMode] = useState<"templates" | "blocks">("templates")
+  const [sidebarMode, setSidebarMode] = useState<"templates" | "blocks">("blocks")
   const [openCat, setOpenCat] = useState<string | null>("Header")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
@@ -450,6 +450,17 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
     (sel as any).move(next, { at: 0 })
   }, [])
 
+  const handleDuplicate = useCallback(() => {
+    const editor = gjsRef.current
+    if (!editor) return
+    const sel = editor.getSelected()
+    if (!sel) return
+    const cloned = (sel as any).clone()
+    if (!cloned) return
+    (cloned as any).move(sel, { at: 1 })
+    editor.select(cloned as any)
+  }, [])
+
   const handleSaveDraft = useCallback(async () => {
     if (!gjsRef.current || !onSaveDraft) return
     setSaving(true)
@@ -629,6 +640,14 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
                 title="Move down"
               >
                 <MoveDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleDuplicate}
+                disabled={!selectedId}
+                className="p-1.5 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 transition"
+                title="Duplicate"
+              >
+                <Copy className="w-3.5 h-3.5" />
               </button>
               <div className="flex-1" />
               <button
