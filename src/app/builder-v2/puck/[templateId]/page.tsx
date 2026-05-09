@@ -1,3 +1,5 @@
+"use client";
+
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 
