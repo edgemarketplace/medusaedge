@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, notFound } from 'next/navigation'
-import { getTemplate, getAllTemplates } from '@/templates/registry'
+import { getTemplate } from '@/templates/registry'
 import { composePage, renderPage, applyCompositionTheme } from '@/composer'
 import type { CompositionResult, TemplateBlueprint, ThemeVariant } from '@/templates/registry/types'
 import Link from 'next/link'
@@ -52,10 +52,24 @@ export default function TemplateDetailPage() {
   }, [composition])
 
   const handleThemeVariantChange = (variant: ThemeVariant) => {
+    if (!template) return
+    
     setActiveThemeVariant(variant)
-    // Apply variant theme - you can expand this later
-    if (typeof window !== 'undefined') {
-      document.documentElement.style.setProperty('--color-accent-primary', variant === 'luxury' ? '#18181b' : '#6366f1')
+    
+    // Recompose page with new theme variant
+    try {
+      const updatedTemplate = { ...template, theme: variant as ThemeVariant }
+      // Update the composition's theme in the template object
+      const newComposition = {
+        ...composition,
+        theme: variant
+      }
+      
+      // Re-render with new theme
+      setComposition(newComposition as CompositionResult)
+      applyCompositionTheme(newComposition as CompositionResult)
+    } catch (e: any) {
+      console.error('Failed to change theme variant:', e)
     }
   }
 
@@ -112,63 +126,13 @@ export default function TemplateDetailPage() {
         </div>
       </div>
 
-      {/* Preview Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Device Toggle */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-slate-900">Preview</h2>
-          <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-slate-200">
-            <button
-              onClick={() => setDevice('desktop')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                device === 'desktop'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Monitor className="h-4 w-4" />
-              Desktop
-            </button>
-            <button
-              onClick={() => setDevice('mobile')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                device === 'mobile'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Smartphone className="h-4 w-4" />
-              Mobile
-            </button>
-          </div>
-        </div>
-
-        {/* Preview Window - Actual Site Demo */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div 
-            className="mx-auto transition-all duration-300"
-            style={{
-              width: device === 'mobile' ? 375 : '100%',
-              maxWidth: device === 'mobile' ? 375 : 1280,
-              minHeight: device === 'mobile' ? 812 : 600,
-            }}
-          >
-            {previewElements ? (
-              <div className="flex flex-col">{previewElements}</div>
-            ) : (
-              <div className="flex items-center justify-center h-96 text-slate-400">
-                <p>Loading preview...</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Template Metadata Below Preview */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      {/* Template Metadata - NOW AT TOP (moved from bottom) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Left: Description */}
+            {/* Left: Description & Tags */}
             <div className="md:col-span-2">
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{template.name}</h3>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">{template.name}</h2>
               <p className="text-slate-600 mb-4">{template.description}</p>
               
               <div className="flex flex-wrap gap-2 mb-4">
@@ -176,13 +140,13 @@ export default function TemplateDetailPage() {
                   Best for: {template.bestFor || 'General'}
                 </span>
                 <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-                  Theme: {composition.theme}
+                  Current Theme: {activeThemeVariant}
                 </span>
               </div>
 
               {/* Sections List */}
               <div>
-                <h4 className="text-sm font-bold text-slate-700 mb-3">Sections ({Array.isArray(template.composition.sections) ? template.composition.sections.length : 0})</h4>
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Sections ({Array.isArray(template.composition.sections) ? template.composition.sections.length : 0})</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {Array.isArray(template.composition.sections) && template.composition.sections.map((section, idx) => (
                     <div 
@@ -196,12 +160,13 @@ export default function TemplateDetailPage() {
               </div>
             </div>
 
-            {/* Right: Theme Variants */}
+            {/* Right: Theme Variants Selector */}
             <div>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                 <Palette className="h-4 w-4" />
                 Theme Variants
-              </h4>
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">Click to preview different themes</p>
               <div className="space-y-2">
                 {Array.isArray(template.themeVariants) && template.themeVariants.map((variant) => (
                   <button
@@ -209,14 +174,66 @@ export default function TemplateDetailPage() {
                     onClick={() => handleThemeVariantChange(variant)}
                     className={`w-full px-3 py-2 rounded-lg text-sm font-medium capitalize transition ${
                       activeThemeVariant === variant
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
                     {variant.replace(/-/g, ' ')}
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Preview Area - NOW BELOW METADATA */}
+        <div>
+          {/* Device Toggle */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-slate-900">Preview</h2>
+            <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-slate-200">
+              <button
+                onClick={() => setDevice('desktop')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  device === 'desktop'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Monitor className="h-4 w-4" />
+                Desktop
+              </button>
+              <button
+                onClick={() => setDevice('mobile')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  device === 'mobile'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Smartphone className="h-4 w-4" />
+                Mobile
+              </button>
+            </div>
+          </div>
+
+          {/* Preview Window - Actual Site Demo */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div 
+              className="mx-auto transition-all duration-300"
+              style={{
+                width: device === 'mobile' ? 375 : '100%',
+                maxWidth: device === 'mobile' ? 375 : 1280,
+                minHeight: device === 'mobile' ? 812 : 600,
+              }}
+            >
+              {previewElements ? (
+                <div className="flex flex-col">{previewElements}</div>
+              ) : (
+                <div className="flex items-center justify-center h-96 text-slate-400">
+                  <p>Loading preview...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
