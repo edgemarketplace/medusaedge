@@ -482,14 +482,17 @@ export default function BuilderV2Page() {
   /* ── Use This Template → compose + preview ── */
   const handleUseTemplate = useCallback(() => {
     if (!selectedTemplate) return
+    try {
+      const result = composePage(selectedTemplate)
+      setComposition(result)
+      setActiveThemeVariant(result.theme) // Use result.theme, not selectedTemplate.composition.theme
+      setView("composed")
 
-    const result = composePage(selectedTemplate)
-    setComposition(result)
-    setActiveThemeVariant(selectedTemplate.composition.theme)
-    setView("composed")
-
-    // Apply the composition theme
-    applyCompositionTheme(result)
+      // Apply the composition theme
+      applyCompositionTheme(result)
+    } catch (error) {
+      console.error("Failed to compose page:", error)
+    }
   }, [selectedTemplate])
 
   /* ── Theme variant change ── */
@@ -608,7 +611,7 @@ export default function BuilderV2Page() {
         {/* Top bar */}
         <TopBar
           templateName={selectedTemplate.name}
-          themeVariants={selectedTemplate.themeVariants}
+          themeVariants={selectedTemplate.themeVariants || []}
           activeThemeVariant={activeThemeVariant}
           onThemeVariantChange={handleThemeVariantChange}
           onBackToTemplates={handleBackToTemplates}
