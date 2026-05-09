@@ -1,7 +1,7 @@
 import type grapesjs from "grapesjs"
 
 /* ──────────────────────────────────────────────────────────────
- * Image / Video section blocks — 5 variations
+ * Image / Video / Embed section blocks
  * ────────────────────────────────────────────────────────────── */
 
 export interface BlockDef {
@@ -12,21 +12,21 @@ export interface BlockDef {
   attributes?: Record<string, string>
 }
 
+const imageUrl = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1600&q=80"
+const galleryUrl = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=1200&q=80"
+const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ"
+const calendarUrl = "https://calendar.google.com/calendar/embed?src=en.usa%23holiday%40group.v.calendar.google.com&ctz=America%2FNew_York"
+
 export const blocks: BlockDef[] = [
-  /* 1 ─ Full-width single image */
   {
     id: "media-1",
     label: "Full Image",
     category: "Image/Video",
     attributes: { class: "gjs-block-section", "data-category": "media", "data-variation": "1" },
     content: `<section class="w-full" data-gjs-type="media">
-      <div class="w-full aspect-[21/9] bg-gray-200 flex items-center justify-center relative">
-        <span class="text-gray-400 text-sm">Image</span>
-      </div>
+      <img data-builder-kind="image" src="${imageUrl}" alt="Marketplace feature image" class="w-full aspect-[21/9] object-cover" />
     </section>`,
   },
-
-  /* 2 ─ Two-column images */
   {
     id: "media-2",
     label: "2 Images",
@@ -34,13 +34,11 @@ export const blocks: BlockDef[] = [
     attributes: { class: "gjs-block-section", "data-category": "media", "data-variation": "2" },
     content: `<section class="w-full bg-white py-12 px-6" data-gjs-type="media">
       <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-6">
-        <div class="aspect-[4/3] bg-gray-200 rounded-2xl flex items-center justify-center"><span class="text-gray-400 text-sm">Image 1</span></div>
-        <div class="aspect-[4/3] bg-gray-200 rounded-2xl flex items-center justify-center"><span class="text-gray-400 text-sm">Image 2</span></div>
+        <img data-builder-kind="image" src="${imageUrl}" alt="Marketplace image 1" class="aspect-[4/3] w-full object-cover rounded-2xl" />
+        <img data-builder-kind="image" src="${galleryUrl}" alt="Marketplace image 2" class="aspect-[4/3] w-full object-cover rounded-2xl" />
       </div>
     </section>`,
   },
-
-  /* 3 ─ Three-column images with captions */
   {
     id: "media-3",
     label: "3 Images",
@@ -50,14 +48,12 @@ export const blocks: BlockDef[] = [
       <div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-6">
         ${[1,2,3].map(i => `
         <div>
-          <div class="aspect-[3/4] bg-gray-200 rounded-2xl mb-4 flex items-center justify-center"><span class="text-gray-400 text-xs">Image ${i}</span></div>
+          <img data-builder-kind="image" src="${i === 1 ? imageUrl : galleryUrl}" alt="Gallery image ${i}" class="aspect-[3/4] w-full object-cover rounded-2xl mb-4" />
           <p class="text-sm font-medium text-gray-900 text-center" data-gjs-editable="true">Caption ${i}</p>
         </div>`).join("")}
       </div>
     </section>`,
   },
-
-  /* 4 ─ Video player placeholder */
   {
     id: "media-4",
     label: "Video Player",
@@ -66,19 +62,10 @@ export const blocks: BlockDef[] = [
     content: `<section class="w-full bg-gray-900 py-16 px-6" data-gjs-type="media">
       <div class="max-w-5xl mx-auto text-center">
         <h2 class="text-3xl font-bold text-white mb-8" data-gjs-editable="true">See It In Action</h2>
-        <div class="aspect-video bg-gray-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
-          <span class="text-gray-500 text-sm">Video Placeholder</span>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-          </div>
-        </div>
+        <iframe data-builder-kind="video" src="${videoUrl}" title="Video player" class="w-full aspect-video rounded-2xl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
       </div>
     </section>`,
   },
-
-  /* 5 ─ Image gallery with overlay text */
   {
     id: "media-5",
     label: "Gallery Grid",
@@ -87,17 +74,38 @@ export const blocks: BlockDef[] = [
     content: `<section class="w-full bg-white py-12 px-6" data-gjs-type="media">
       <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div class="col-span-2 row-span-2 bg-gray-200 rounded-2xl flex items-center justify-center relative">
-            <span class="text-gray-400 text-sm">Main Image</span>
-            <div class="absolute bottom-6 left-6">
-              <h3 class="text-white font-bold text-xl" data-gjs-editable="true">Collection</h3>
-            </div>
+          <div class="col-span-2 row-span-2 rounded-2xl overflow-hidden relative">
+            <img data-builder-kind="image" src="${imageUrl}" alt="Main gallery image" class="w-full h-full min-h-[360px] object-cover" />
+            <div class="absolute bottom-6 left-6"><h3 class="text-white font-bold text-xl" data-gjs-editable="true">Collection</h3></div>
           </div>
-          <div class="bg-gray-100 rounded-2xl aspect-square flex items-center justify-center"><span class="text-gray-300 text-xs">Img</span></div>
-          <div class="bg-gray-100 rounded-2xl aspect-square flex items-center justify-center"><span class="text-gray-300 text-xs">Img</span></div>
-          <div class="bg-gray-100 rounded-2xl aspect-square flex items-center justify-center"><span class="text-gray-300 text-xs">Img</span></div>
-          <div class="bg-gray-100 rounded-2xl aspect-square flex items-center justify-center"><span class="text-gray-300 text-xs">Img</span></div>
+          ${[1,2,3,4].map(i => `<img data-builder-kind="image" src="${galleryUrl}" alt="Gallery thumbnail ${i}" class="bg-gray-100 rounded-2xl aspect-square w-full object-cover" />`).join("")}
         </div>
+      </div>
+    </section>`,
+  },
+  {
+    id: "media-6",
+    label: "Embed HTML",
+    category: "Image/Video",
+    attributes: { class: "gjs-block-section", "data-category": "media", "data-variation": "6" },
+    content: `<section class="w-full bg-white py-12 px-6" data-gjs-type="media">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6" data-gjs-editable="true">Custom Embed</h2>
+        <div data-builder-kind="embed" class="w-full rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-500">
+          <p>Paste iframe, scriptless widget HTML, or third-party embed code in the left panel.</p>
+        </div>
+      </div>
+    </section>`,
+  },
+  {
+    id: "media-7",
+    label: "Calendar Embed",
+    category: "Image/Video",
+    attributes: { class: "gjs-block-section", "data-category": "media", "data-variation": "7" },
+    content: `<section class="w-full bg-slate-50 py-12 px-6" data-gjs-type="media">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6" data-gjs-editable="true">Book a Time</h2>
+        <iframe data-builder-kind="video" src="${calendarUrl}" title="Calendar Embed" class="w-full h-[640px] rounded-2xl bg-white border border-gray-200" loading="lazy"></iframe>
       </div>
     </section>`,
   },
