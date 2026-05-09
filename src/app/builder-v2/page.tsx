@@ -23,7 +23,6 @@ import {
   composePage,
   renderPage,
   applyCompositionTheme,
-  serializePage,
 } from "@/composer"
 import type { CompositionResult } from "@/composer"
 
@@ -385,8 +384,6 @@ function TopBar({
   activeThemeVariant,
   onThemeVariantChange,
   onBackToTemplates,
-  onContinueToEditor,
-  isEditorReady,
 }: {
   templateName: string
   themeVariants: ThemeVariant[]
@@ -437,15 +434,7 @@ function TopBar({
       </div>
 
       {/* Right: Continue to Editor */}
-      <button
-        onClick={onContinueToEditor}
-        disabled={!isEditorReady}
-        className="shrink-0 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-900 to-slate-800 px-4 py-2 text-xs font-bold text-white shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <ExternalLink className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Continue to Editor</span>
-        <span className="sm:hidden">Editor</span>
-      </button>
+      
     </div>
   )
 }
@@ -509,35 +498,8 @@ export default function BuilderV2Page() {
     setActiveThemeVariant("")
   }, [])
 
-  /* ── Continue to Editor ── */
-  const handleContinueToEditor = useCallback(() => {
-    if (!composition || !selectedTemplate) return
+  
 
-    // Store composition in sessionStorage for the builder to pick up
-    try {
-      const payload = {
-        templateId: selectedTemplate.id,
-        templateName: selectedTemplate.name,
-        serializedPage: serializePage(composition),
-        theme: composition.theme,
-        composedAt: composition.metadata.composedAt,
-      }
-      sessionStorage.setItem(
-        "builder-v2-composition",
-        JSON.stringify(payload)
-      )
-    } catch {
-      // sessionStorage may not be available
-    }
-
-    // Generate a project ID and navigate to the builder
-    const projectId =
-      "prj-" +
-      Math.random().toString(36).slice(2, 10) +
-      Date.now().toString(36).slice(-4)
-
-    router.push(`/builder/${projectId}`)
-  }, [composition, selectedTemplate, router])
 
   /* ── Re-apply theme when composition changes ── */
   useEffect(() => {
@@ -633,8 +595,7 @@ export default function BuilderV2Page() {
           activeThemeVariant={activeThemeVariant}
           onThemeVariantChange={handleThemeVariantChange}
           onBackToTemplates={handleBackToTemplates}
-          onContinueToEditor={handleContinueToEditor}
-          isEditorReady={true}
+            isEditorReady={true}
         />
 
         {/* Main area: preview + sidebar */}

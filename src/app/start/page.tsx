@@ -61,7 +61,7 @@ export default function StartLaunchPage() {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
             <Link
-              href="/builder"
+              href="/builder-v2"
               className="inline-flex items-center gap-2 rounded-full border border-slate-600 px-8 py-4 text-base font-bold text-white transition hover:bg-white/5"
             >
               Skip to Builder <ArrowRight className="h-4 w-4" />
