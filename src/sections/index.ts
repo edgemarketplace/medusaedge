@@ -25,6 +25,7 @@ import FooterStandard from "./FooterStandard"
 
 // ── Commerce ──
 import TrustStrip from "./TrustStrip"
+import ProofStrip from "./ProofStrip"
 import BundleBuilder from "./BundleBuilder"
 import SubscriptionPlans from "./SubscriptionPlans"
 import RecentlyViewed from "./RecentlyViewed"
