@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
