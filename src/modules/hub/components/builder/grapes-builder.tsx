@@ -98,25 +98,8 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
   /* ── init GrapesJS ── */
   const [useV2, setUseV2] = useState(true)
 
-  if (useV2) {
-    return (
-      <GrapesJSEditor 
-        projectId={projectId}
-        templateHtml={initialProject ? "" : ""} // Map project data here
-        onBack={() => setUseV2(false)}
-        onSave={async (html, css) => {
-           console.log("Saving V2 Blueprint", { html, css })
-           setSaving(true)
-           try {
-             // Use existing draft handler
-             if (onSaveDraft) await onSaveDraft({ html, css, type: 'v2-blueprint' })
-           } finally {
-             setSaving(false)
-           }
-        }}
-      />
-    )
-  }
+  useEffect(() => {
+    if (useV2) return; // Skip v1 init if v2 is active
 
     let destroyed = false
 
@@ -233,7 +216,26 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
         gjsRef.current = null
       }
     }
-  }, [projectId, readSelectedMedia])
+  }, [projectId, readSelectedMedia, useV2, initialProject])
+
+  if (useV2) {
+    return (
+      <GrapesJSEditor 
+        templateHtml={initialProject ? "" : ""} // Map project data here
+        onBack={() => setUseV2(false)}
+        onSave={async (html, css) => {
+           console.log("Saving V2 Blueprint", { html, css })
+           setSaving(true)
+           try {
+             // Use existing draft handler
+             if (onSaveDraft) await onSaveDraft({ html, css, type: 'v2-blueprint' })
+           } finally {
+             setSaving(false)
+           }
+        }}
+      />
+    )
+  }
 
   /* ── device toggle ── */
   useEffect(() => {
@@ -520,122 +522,93 @@ export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, 
                 )}
                 <button
                   onClick={applySelectedMediaValue}
-                  className="w-full rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-500"
+                  className="w-full rounded bg-blue-600 py-2 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-blue-500 transition"
                 >
-                  Apply media / embed update
+                  Apply Changes
                 </button>
-                <p className="text-[10px] leading-4 text-slate-500">
-                  Select an image, video iframe, calendar, or embed area on the canvas, paste the URL or HTML, then apply.
-                </p>
               </div>
             )}
           </div>
         )}
-
-        {/* Validation Footer */}
-        <div className="p-4 border-t border-slate-800 space-y-2.5">
-          <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">Required sections</p>
-          {[
-            { key: "hasHeader", label: "Header" },
-            { key: "hasHero", label: "Hero" },
-            { key: "hasFooter", label: "Footer" },
-          ].map((req) => (
-            <div key={req.key} className="flex items-center gap-2">
-              <div
-                className={clsx(
-                  "w-2 h-2 rounded-full",
-                  validation[req.key as keyof typeof validation] ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-red-400"
-                )}
-              />
-              <span
-                className={clsx(
-                  "text-xs",
-                  validation[req.key as keyof typeof validation] ? "text-emerald-400" : "text-red-400"
-                )}
-              >
-                {req.label}
-              </span>
-            </div>
-          ))}
-        </div>
       </aside>
 
-      {/* ── Main Editor Area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Toolbar */}
-        <header className="h-14 border-b border-slate-800 bg-slate-900 flex items-center justify-between px-5">
-          <div className="flex items-center gap-4">
-            {/* Device Toggle */}
-            <div className="flex items-center bg-slate-800 rounded-lg p-0.5">
+      {/* ── Canvas ── */}
+      <main className="flex-1 relative bg-slate-100 flex flex-col">
+        {/* Toolbar */}
+        <div className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
               <button
                 onClick={() => setDevice("Desktop")}
-                className={clsx(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition",
-                  device === "Desktop" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
-                )}
+                className={clsx("p-1.5 rounded-md transition", device === "Desktop" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}
               >
-                <Monitor className="w-3.5 h-3.5" />
-                Desktop
+                <Monitor className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setDevice("Mobile")}
-                className={clsx(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition",
-                  device === "Mobile" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
-                )}
+                className={clsx("p-1.5 rounded-md transition", device === "Mobile" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}
               >
-                <Smartphone className="w-3.5 h-3.5" />
-                Mobile
+                <Smartphone className="w-4 h-4" />
               </button>
+            </div>
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex items-center gap-3">
+              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasHeader ? "text-emerald-600" : "text-slate-400")}>
+                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasHeader ? "bg-emerald-500" : "bg-slate-300")} />
+                Header
+              </span>
+              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasHero ? "text-emerald-600" : "text-slate-400")}>
+                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasHero ? "bg-emerald-500" : "bg-slate-300")} />
+                Hero
+              </span>
+              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasFooter ? "text-emerald-600" : "text-slate-400")}>
+                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasFooter ? "bg-emerald-500" : "bg-slate-300")} />
+                Footer
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleSaveDraft}
               disabled={saving || !isReady}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 rounded-lg text-xs font-medium hover:bg-slate-700 disabled:opacity-50 transition"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
             >
-              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Draft
             </button>
             <button
               onClick={handlePreview}
               disabled={!isReady}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 rounded-lg text-xs font-medium hover:bg-slate-700 disabled:opacity-50 transition"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="w-3.5 h-3.5" />
               Preview
             </button>
             <button
               onClick={handleDeploy}
               disabled={deploying || !isReady}
-              className={clsx(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition",
-                validation.hasHeader && validation.hasHero && validation.hasFooter
-                  ? "bg-blue-600 text-white hover:bg-blue-500"
-                  : "bg-slate-700 text-slate-400 cursor-not-allowed"
-              )}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:opacity-50"
             >
-              {deploying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+              {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
               Submit for Deployment
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* Canvas */}
-        <div
-          data-testid="builder-canvas-shell"
-          className="flex-1 relative min-h-0 bg-gray-100 overflow-hidden"
-        >
+        {/* GrapesJS Canvas Container */}
+        <div className="flex-1 relative overflow-hidden">
+          <div ref={containerRef} className="h-full w-full" />
           {!isReady && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
-              <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initializing Engine...</p>
+              </div>
             </div>
           )}
-          <div ref={containerRef} className="builder-grapes-host h-full w-full" />
         </div>
-      </div>
+      </main>
     </div>
   )
 }
