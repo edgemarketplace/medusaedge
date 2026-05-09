@@ -1,812 +1,542 @@
-"use client"
-
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
-import type grapesjs from "grapesjs"
-import GrapesJSEditor from "@/GrapesJSEditor"
-import { registerBlocks } from "@/lib/grapes/register-blocks"
-import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
-import { ecommerceTemplates } from "@/lib/grapes/ecommerce-templates"
-import type { BlockDef } from "@/lib/grapes/blocks"
-import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2, Bug, Copy } from "lucide-react"
-import Link from "next/link"
-import clsx from "clsx"
-
-export interface GrapesBuilderProps {
-  projectId: string
-  initialProject?: object
-  onSaveDraft?: (projectJson: object) => Promise<void>
-  onDeploy?: (projectJson: object) => Promise<void>
-}
-
-type SelectedMedia = {
-  id: string
-  kind: "image" | "video" | "iframe" | "embed"
-  label: string
-  value: string
-  placeholder: string
-} | null
-
-/* ──────────────────────────────────────────────────────────────
- * Default starter composition — loaded when no saved project exists.
- * Never show a blank canvas.
- * ────────────────────────────────────────────────────────────── */
-const DEFAULT_PAGE_HTML = `<header data-gjs-type="header" data-template-source="starter" class="bg-slate-950 text-white px-6 py-4">
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-6">
-    <div class="text-xl font-black tracking-tight" data-gjs-editable="true">Marketplace</div>
-    <nav class="hidden items-center gap-6 text-sm font-medium opacity-90 md:flex">
-      <a href="#" data-gjs-editable="true">Shop</a>
-      <a href="#" data-gjs-editable="true">Categories</a>
-      <a href="#" data-gjs-editable="true">Deals</a>
-      <a href="#" data-gjs-editable="true">Support</a>
-    </nav>
-    <button class="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-950" data-gjs-editable="true">Start shopping</button>
-  </div>
-</header>
-<section data-gjs-type="hero" class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-600 px-6 py-20 text-white">
-  <div class="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2">
-    <div>
-      <p class="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-indigo-200" data-gjs-editable="true">Launch your store</p>
-      <h1 class="text-5xl font-black leading-tight" data-gjs-editable="true">Build your marketplace. Drag, drop, deploy.</h1>
-      <p class="mt-5 text-lg text-slate-100" data-gjs-editable="true">Add sections from the left panel to create your perfect storefront.</p>
-      <button class="mt-8 rounded-full bg-indigo-500 px-6 py-3 font-black text-white" data-gjs-editable="true">Explore sections</button>
-    </div>
-    <div class="rounded-3xl bg-white/10 p-8 flex items-center justify-center h-64">
-      <p class="text-indigo-200 text-sm font-mono">Your hero image</p>
-    </div>
-  </div>
-</section>
-<footer data-gjs-type="footer" class="bg-slate-950 text-white px-6 py-10">
-  <div class="mx-auto grid max-w-7xl gap-8 md:grid-cols-4">
-    <div><p class="text-lg font-black" data-gjs-editable="true">Marketplace</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Everything your customers need in one storefront.</p></div>
-    <div><p class="font-bold" data-gjs-editable="true">Shop</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">New arrivals<br/>Best sellers<br/>Gift cards</p></div>
-    <div><p class="font-bold" data-gjs-editable="true">Company</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">About<br/>Vendors<br/>Careers</p></div>
-    <div><p class="font-bold" data-gjs-editable="true">Help</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Shipping<br/>Returns<br/>Contact</p></div>
-  </div>
-</footer>`
-
-/* Section boundary and hover styles injected into the GrapesJS canvas */
-const CANVAS_SECTION_STYLES = `
-  /* Section boundaries */
-  body {
-    background: #f1f5f9;
-    margin: 0;
-  }
-  [data-gjs-type] {
-    position: relative;
-  }
-  [data-gjs-type]:not(.gjs-selected) {
-    outline: 1px dashed transparent;
-    transition: outline-color 0.2s;
-  }
-  [data-gjs-type]:not(.gjs-selected):hover {
-    outline: 1px dashed #94a3b8;
-  }
-  .gjs-selected {
-    outline: 2px solid #3b82f6 !important;
-    outline-offset: -1px;
-  }
-  /* Hover controls overlay — these are rendered by GrapesJS badges */
-  .gjs-badge {
-    pointer-events: all !important;
-  }
-  /* Section labels */
-  .gjs-selected::before {
-    content: attr(data-gjs-type);
-    position: absolute;
-    top: -28px;
-    left: 8px;
-    background: #3b82f6;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 3px 8px;
-    border-radius: 4px;
-    z-index: 9999;
-    pointer-events: none;
-  }
-  /* Canvas centering / frame on Desktop */
-  @media (min-width: 1024px) {
-    body {
-      display: flex;
-      justify-content: center;
-      padding: 2rem 0;
+     1|"use client"
+     2|
+     3|import { useEffect, useRef, useState, useCallback, useMemo } from "react"
+     4|import type grapesjs from "grapesjs"
+     5|import GrapesJSEditor from "@/GrapesJSEditor"
+     6|import { registerBlocks } from "@/lib/grapes/register-blocks"
+     7|import { allBlocks, CATEGORIES } from "@/lib/grapes/blocks"
+     8|// ecommerceTemplates now loaded from new registry below
+     9|import type { BlockDef } from "@/lib/grapes/blocks"
+    10|import { Save, Eye, Rocket, ArrowLeft, Loader2, Plus, Trash2, MoveUp, MoveDown, Monitor, Smartphone, Image as ImageIcon, Code2, Bug, Copy } from "lucide-react"
+    11|import Link from "next/link"
+    12|import clsx from "clsx"
+import { getAllTemplates, type TemplateBlueprint } from "@/templates/registry"
+import { composePage } from "@/composer"
+    13|
+    14|export interface GrapesBuilderProps {
+    15|  projectId: string
+    16|  initialProject?: object
+    17|  onSaveDraft?: (projectJson: object) => Promise<void>
+    18|  onDeploy?: (projectJson: object) => Promise<void>
+    19|}
+    20|
+    21|type SelectedMedia = {
+    22|  id: string
+    23|  kind: "image" | "video" | "iframe" | "embed"
+    24|  label: string
+    25|  value: string
+    26|  placeholder: string
+    27|} | null
+    28|
+    29|/* ──────────────────────────────────────────────────────────────
+    30| * Default starter composition — loaded when no saved project exists.
+    31| * Never show a blank canvas.
+    32| * ────────────────────────────────────────────────────────────── */
+    33|const DEFAULT_PAGE_HTML = `<header data-gjs-type="header" data-template-source="starter" class="bg-slate-950 text-white px-6 py-4">
+    34|  <div class="mx-auto flex max-w-7xl items-center justify-between gap-6">
+    35|    <div class="text-xl font-black tracking-tight" data-gjs-editable="true">Marketplace</div>
+    36|    <nav class="hidden items-center gap-6 text-sm font-medium opacity-90 md:flex">
+    37|      <a href="#" data-gjs-editable="true">Shop</a>
+    38|      <a href="#" data-gjs-editable="true">Categories</a>
+    39|      <a href="#" data-gjs-editable="true">Deals</a>
+    40|      <a href="#" data-gjs-editable="true">Support</a>
+    41|    </nav>
+    42|    <button class="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-950" data-gjs-editable="true">Start shopping</button>
+    43|  </div>
+    44|</header>
+    45|<section data-gjs-type="hero" class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-600 px-6 py-20 text-white">
+    46|  <div class="mx-auto grid max-w-7xl items-center gap-10 md:grid-cols-2">
+    47|    <div>
+    48|      <p class="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-indigo-200" data-gjs-editable="true">Launch your store</p>
+    49|      <h1 class="text-5xl font-black leading-tight" data-gjs-editable="true">Build your marketplace. Drag, drop, deploy.</h1>
+    50|      <p class="mt-5 text-lg text-slate-100" data-gjs-editable="true">Add sections from the left panel to create your perfect storefront.</p>
+    51|      <button class="mt-8 rounded-full bg-indigo-500 px-6 py-3 font-black text-white" data-gjs-editable="true">Explore sections</button>
+    52|    </div>
+    53|    <div class="rounded-3xl bg-white/10 p-8 flex items-center justify-center h-64">
+    54|      <p class="text-indigo-200 text-sm font-mono">Your hero image</p>
+    55|    </div>
+    56|  </div>
+    57|</section>
+    58|<footer data-gjs-type="footer" class="bg-slate-950 text-white px-6 py-10">
+    59|  <div class="mx-auto grid max-w-7xl gap-8 md:grid-cols-4">
+    60|    <div><p class="text-lg font-black" data-gjs-editable="true">Marketplace</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Everything your customers need in one storefront.</p></div>
+    61|    <div><p class="font-bold" data-gjs-editable="true">Shop</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">New arrivals<br/>Best sellers<br/>Gift cards</p></div>
+    62|    <div><p class="font-bold" data-gjs-editable="true">Company</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">About<br/>Vendors<br/>Careers</p></div>
+    63|    <div><p class="font-bold" data-gjs-editable="true">Help</p><p class="mt-3 text-sm opacity-70" data-gjs-editable="true">Shipping<br/>Returns<br/>Contact</p></div>
+    64|  </div>
+    65|</footer>`
+    66|
+    67|/* Section boundary and hover styles injected into the GrapesJS canvas */
+    68|const CANVAS_SECTION_STYLES = `
+    69|  /* Section boundaries */
+    70|  body {
+    71|    background: #f1f5f9;
+    72|    margin: 0;
+    73|  }
+    74|  [data-gjs-type] {
+    75|    position: relative;
+    76|  }
+    77|  [data-gjs-type]:not(.gjs-selected) {
+    78|    outline: 1px dashed transparent;
+    79|    transition: outline-color 0.2s;
+    80|  }
+    81|  [data-gjs-type]:not(.gjs-selected):hover {
+    82|    outline: 1px dashed #94a3b8;
+    83|  }
+    84|  .gjs-selected {
+    85|    outline: 2px solid #3b82f6 !important;
+    86|    outline-offset: -1px;
+    87|  }
+    88|  /* Hover controls overlay — these are rendered by GrapesJS badges */
+    89|  .gjs-badge {
+    90|    pointer-events: all !important;
+    91|  }
+    92|  /* Section labels */
+    93|  .gjs-selected::before {
+    94|    content: attr(data-gjs-type);
+    95|    position: absolute;
+    96|    top: -28px;
+    97|    left: 8px;
+    98|    background: #3b82f6;
+    99|    color: white;
+   100|    font-size: 10px;
+   101|    font-weight: 700;
+   102|    text-transform: uppercase;
+   103|    letter-spacing: 0.1em;
+   104|    padding: 3px 8px;
+   105|    border-radius: 4px;
+   106|    z-index: 9999;
+   107|    pointer-events: none;
+   108|  }
+   109|  /* Canvas centering / frame on Desktop */
+   110|  @media (min-width: 1024px) {
+   111|    body {
+   112|      display: flex;
+   113|      justify-content: center;
+   114|      padding: 2rem 0;
+   115|    }
+   116|  }
+   117|  /* Realistic storefront preview frame */
+   118|  .gjs-frame {
+   119|    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+   120|    border-radius: 8px;
+   121|    overflow: hidden;
+   122|    background: #fff;
+   123|  }
+   124|`
+   125|
+   126|const catMeta: Record<string, { icon: string; color: string }> = {
+   127|  Header: { icon: "⊤", color: "text-indigo-400" },
+   128|  Hero: { icon: "H", color: "text-rose-400" },
+   129|  Products: { icon: "Π", color: "text-emerald-400" },
+   130|  Text: { icon: "T", color: "text-amber-400" },
+   131|  "Image/Video": { icon: "▣", color: "text-sky-400" },
+   132|  Footer: { icon: "⊥", color: "text-slate-400" },
+   133|}
+   134|
+   135|
+        
+/* ── Convert TemplateBlueprint to HTML for GrapesJS ── */
+function generateTemplateHtml(blueprint: TemplateBlueprint): string {
+  try {
+    // Use composePage to resolve the template composition
+    const result = composePage(blueprint)
+    
+    // Generate HTML from resolved sections
+    let html = ''
+    if (result.sections && Array.isArray(result.sections)) {
+      for (const section of result.sections) {
+        // Each section component renders its own HTML
+        html += `<div data-gjs-type="${section.sectionId || 'section'}" data-template-source="${blueprint.id}">Section ${section.sectionId || 'content'}</div>\n`
+      }
     }
+    return html
+  } catch (err) {
+    console.error('Error generating template HTML:', err)
+    return `<div data-gjs-type="error">Error loading template ${blueprint.name}</div>`
   }
-  /* Realistic storefront preview frame */
-  .gjs-frame {
-    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fff;
-  }
-`
-
-const catMeta: Record<string, { icon: string; color: string }> = {
-  Header: { icon: "⊤", color: "text-indigo-400" },
-  Hero: { icon: "H", color: "text-rose-400" },
-  Products: { icon: "Π", color: "text-emerald-400" },
-  Text: { icon: "T", color: "text-amber-400" },
-  "Image/Video": { icon: "▣", color: "text-sky-400" },
-  Footer: { icon: "⊥", color: "text-slate-400" },
 }
 
 export default function GrapesBuilder({ projectId, initialProject, onSaveDraft, onDeploy }: GrapesBuilderProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const gjsRef = useRef<grapesjs.Editor | null>(null)
-
-  const [isReady, setIsReady] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [deploying, setDeploying] = useState(false)
-  const [validation, setValidation] = useState({ hasHeader: false, hasHero: false, hasFooter: false })
-  const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
-  const [sidebarMode, setSidebarMode] = useState<"templates" | "blocks">("blocks")
-  const [openCat, setOpenCat] = useState<string | null>("Header")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
-
-  /* ── debug mode ── */
-  const isDebug = useMemo(() => {
-    if (typeof window === "undefined") return false
-    return new URLSearchParams(window.location.search).get("debug") === "true"
-  }, [])
-  const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({})
-
-  const readSelectedMedia = useCallback((component: any): SelectedMedia => {
-    if (!component) return null
-    const attrs = component.getAttributes?.() || {}
-    const tagName = String(component.get?.("tagName") || "").toLowerCase()
-    const kindAttr = attrs["data-builder-kind"]
-    const kind = kindAttr || (tagName === "img" ? "image" : tagName === "iframe" ? "iframe" : tagName === "video" ? "video" : null)
-
-    if (!kind) return null
-
-    if (kind === "embed") {
-      const html = component.components?.().map((child: any) => child.toHTML?.() || "").join("") || component.get?.("content") || ""
-      return {
-        id: component.getId?.() || component.cid,
-        kind: "embed",
-        label: "Embed HTML",
-        value: html,
-        placeholder: '<iframe src="https://calendly.com/your-link" class="w-full h-[640px]"></iframe>',
-      }
-    }
-
-    const mediaKind = kind === "image" ? "image" : kind === "video" ? "video" : "iframe"
-    return {
-      id: component.getId?.() || component.cid,
-      kind: mediaKind,
-      label: mediaKind === "image" ? "Image URL" : "Video / iframe URL",
-      value: attrs.src || "",
-      placeholder: mediaKind === "image" ? "https://example.com/photo.jpg" : "https://www.youtube.com/embed/...",
-    }
-  }, [])
-
-  const applySelectedMediaValue = useCallback(() => {
-    const editor = gjsRef.current
-    const selected = editor?.getSelected() as any
-    if (!editor || !selected || !selectedMedia) return
-
-    if (selectedMedia.kind === "embed") {
-      selected.components(selectedMedia.value || '<p class="text-gray-500">Embed HTML goes here</p>')
-    } else {
-      selected.addAttributes({ src: selectedMedia.value })
-    }
-
-    selected.view?.render?.()
-    editor.trigger("component:update", selected)
-    editor.refresh()
-  }, [selectedMedia])
-
-  /* ── init GrapesJS ── */
-  const [useV2, setUseV2] = useState(false)
-
-  useEffect(() => {
-    if (useV2) return; // Skip v1 init if v2 is active
-
-    let destroyed = false
-
-    async function init() {
-      const grapesjs = (await import("grapesjs")).default
-      if (destroyed) return
-
-      const editor = grapesjs.init({
-        container: containerRef.current!,
-        fromElement: false,
-        height: "100%",
-        width: "auto",
-        storageManager: false,
-        assetManager: false,
-        panels: { defaults: [] },
-        layerManager: { showWrapper: false, showDevices: false },
-        selectorManager: { componentFirst: true },
-        styleManager: {
-          sectors: [
-            {
-              name: "Typography",
-              properties: [
-                "font-size",
-                "font-family",
-                "color",
-                "text-align",
-                "line-height",
-              ],
-            },
-            {
-              name: "Spacing",
-              properties: ["padding", "margin"],
-            },
-            {
-              name: "Decorations",
-              properties: ["background-color", "border-radius", "border"],
-            },
-          ],
-        },
-        traitManager: { disabled: true },
-        deviceManager: {
-          devices: [
-            { name: "Desktop", width: "" },
-            { name: "Mobile", width: "375px" },
-          ],
-        },
-        canvas: {
-          styles: [
-            "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
-          ],
-          scripts: [],
-        },
-        blockManager: { custom: true },
-      })
-
-      editor.Panels.removePanel("options")
-      editor.Panels.removePanel("views")
-
-      // Wire up our blocks (they still register so traits/defaults are defined)
-      registerBlocks(editor)
-
-      // Track selected component
-      editor.on("component:selected", (c: any) => {
-        setSelectedId(c?.getId?.() || null)
-        setSelectedMedia(readSelectedMedia(c))
-      })
-      editor.on("component:deselected", () => {
-        setSelectedId(null)
-        setSelectedMedia(null)
-      })
-      editor.on("component:update", (c: any) => {
-        if (editor.getSelected() === c) setSelectedMedia(readSelectedMedia(c))
-      })
-
-      // Validation
-      const validate = () => {
-        const html = editor.getHtml() || ""
-        setValidation({
-          hasHeader: html.includes("<header") || html.includes('data-gjs-type="header"'),
-          hasHero: html.includes('data-gjs-type="hero"'),
-          hasFooter: html.includes("<footer") || html.includes('data-gjs-type="footer"'),
-        })
-        // Refresh debug info
-        if (isDebug) {
-          const blocks = editor.BlockManager.getAll()
-          setDebugInfo({
-            registeredBlocks: Object.keys(blocks).length,
-            blockIds: Object.keys(blocks),
-            componentCount: editor.getComponents?.().length ?? 0,
-            projectId,
-            hasHeader: html.includes("<header"),
-            hasHero: html.includes('data-gjs-type="hero"'),
-            hasFooter: html.includes("<footer"),
-          })
-        }
-      }
-      editor.on("component:add component:remove component:update", validate)
-      validate()
-
-      // Load data — never show blank canvas
-      if (initialProject) {
-        editor.loadProjectData(initialProject as any)
-      } else {
-        // Mount default starter composition so the editor is never blank
-        editor.setComponents(DEFAULT_PAGE_HTML)
-        editor.setStyle("")
-      }
-
-      // Inject section boundary styles into the canvas
-      try {
-        const canvasDoc = editor.Canvas.getDocument()
-        if (canvasDoc) {
-          const styleEl = canvasDoc.createElement("style")
-          styleEl.setAttribute("data-hermes", "section-boundaries")
-          styleEl.textContent = CANVAS_SECTION_STYLES
-          canvasDoc.head.appendChild(styleEl)
-        }
-      } catch (_) { /* canvas may not be ready — styles still apply via config */ }
-
-      gjsRef.current = editor
-      setIsReady(true)
-
-      // Populate debug info
-      if (isDebug) {
-        const blocks = editor.BlockManager.getAll()
-        setDebugInfo({
-          registeredBlocks: Object.keys(blocks).length,
-          blockIds: Object.keys(blocks),
-          componentCount: editor.getComponents?.().length ?? 0,
-          projectId,
-        })
-      }
-
-      // Keyboard delete shortcut
-      const onKey = (e: KeyboardEvent) => {
-        if ((e.key === "Delete" || e.key === "Backspace") && editor.getSelected()) {
-          // Only delete if not actively editing text
-          if (!editor.getEditing()) {
-            editor.runCommand("core:component-delete")
-          }
-        }
-      }
-      window.addEventListener("keydown", onKey)
-
-      return () => window.removeEventListener("keydown", onKey)
-    }
-
-    init()
-
-    return () => {
-      destroyed = true
-      if (gjsRef.current) {
-        gjsRef.current.destroy()
-        gjsRef.current = null
-      }
-    }
-  }, [projectId, readSelectedMedia, useV2, initialProject])
-
-  if (useV2) {
-    return (
-      <GrapesJSEditor 
-        templateHtml={initialProject ? "" : ""} // Map project data here
-        onBack={() => setUseV2(false)}
-        onSave={async (html, css) => {
-           console.log("Saving V2 Blueprint", { html, css })
-           setSaving(true)
-           try {
-             // Use existing draft handler
-             if (onSaveDraft) await onSaveDraft({ html, css, type: 'v2-blueprint' })
-           } finally {
-             setSaving(false)
-           }
-        }}
-      />
-    )
-  }
-
-  /* ── device toggle ── */
-  useEffect(() => {
-    if (!gjsRef.current) return
-    gjsRef.current.setDevice(device)
-  }, [device])
-
-  /* ── actions ── */
-
-  const handleApplyTemplate = useCallback((templateId: string) => {
-    const editor = gjsRef.current
-    if (!editor) return
-    const template = ecommerceTemplates.find((item) => item.id === templateId)
-    if (!template) return
-
-    const ok = window.confirm(
-      `Start with ${template.name}? This replaces the current canvas. Save your draft first if you want to keep it.`
-    )
-    if (!ok) return
-
-    editor.setComponents(template.content)
-    editor.setStyle("")
-    editor.select(null as any)
-    setSelectedId(null)
-    setSelectedMedia(null)
-    editor.trigger("component:update")
-    editor.refresh()
-  }, [])
-
-  const handleAddBlock = useCallback((block: BlockDef) => {
-    const editor = gjsRef.current
-    if (!editor) return
-
-    const added = editor.addComponents(block.content as string)
-    if (added && added[0]) {
-      editor.select(added[0] as any)
-      // Scroll canvas to bottom
-      const canvasDoc = editor.Canvas.getDocument()
-      if (canvasDoc) {
-        canvasDoc.body.scrollTop = canvasDoc.body.scrollHeight
-      }
-    }
-  }, [])
-
-  const handleDeleteSelected = useCallback(() => {
-    const editor = gjsRef.current
-    if (!editor) return
-    const sel = editor.getSelected()
-    if (sel) editor.runCommand("core:component-delete")
-  }, [])
-
-  const handleMoveUp = useCallback(() => {
-    const editor = gjsRef.current
-    if (!editor) return
-    const sel = editor.getSelected()
-    if (!sel) return
-    const prev = (sel as any).prevSibling()
-    if (!prev) return
-    (sel as any).move(prev, { at: -1 })
-  }, [])
-
-  const handleMoveDown = useCallback(() => {
-    const editor = gjsRef.current
-    if (!editor) return
-    const sel = editor.getSelected()
-    if (!sel) return
-    const next = (sel as any).nextSibling()
-    if (!next) return
-    (sel as any).move(next, { at: 0 })
-  }, [])
-
-  const handleDuplicate = useCallback(() => {
-    const editor = gjsRef.current
-    if (!editor) return
-    const sel = editor.getSelected()
-    if (!sel) return
-    const cloned = (sel as any).clone()
-    if (!cloned) return
-    (cloned as any).move(sel, { at: 1 })
-    editor.select(cloned as any)
-  }, [])
-
-  const handleSaveDraft = useCallback(async () => {
-    if (!gjsRef.current || !onSaveDraft) return
-    setSaving(true)
-    try {
-      const json = gjsRef.current.getProjectData()
-      await onSaveDraft(json)
-    } finally {
-      setSaving(false)
-    }
-  }, [onSaveDraft])
-
-  const handlePreview = useCallback(() => {
-    if (!gjsRef.current) return
-    const html = gjsRef.current.getHtml()
-    const css = gjsRef.current.getCss()
-    const previewHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charSet="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Marketplace Preview</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
-  <style>body{margin:0;background:#fff;} iframe{max-width:100%;} ${css}</style>
-</head>
-<body>${html}</body>
-</html>`
-    const blob = new Blob([previewHtml], { type: "text/html" })
-    const url = URL.createObjectURL(blob)
-    window.open(url, "_blank")
-  }, [])
-
-  const handleDeploy = useCallback(async () => {
-    if (!gjsRef.current || !onDeploy) return
-    if (!validation.hasHeader || !validation.hasHero || !validation.hasFooter) {
-      alert("Please add at least one Header, one Hero, and one Footer before deploying.")
+   136|  const containerRef = useRef<HTMLDivElement>(null)
+   137|  const gjsRef = useRef<grapesjs.Editor | null>(null)
+   138|
+   139|  const [isReady, setIsReady] = useState(false)
+   140|  const [saving, setSaving] = useState(false)
+   141|  const [deploying, setDeploying] = useState(false)
+   142|  const [validation, setValidation] = useState({ hasHeader: false, hasHero: false, hasFooter: false })
+   143|  const [device, setDevice] = useState<"Desktop" | "Mobile">("Desktop")
+   144|  const [sidebarMode, setSidebarMode] = useState<"templates" | "blocks">("blocks")
+   145|  const [openCat, setOpenCat] = useState<string | null>("Header")
+   146|  const [selectedId, setSelectedId] = useState<string | null>(null)
+   147|  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(null)
+   148|
+   149|  /* ── debug mode ── */
+   150|  const isDebug = useMemo(() => {
+   151|    if (typeof window === "undefined") return false
+   152|    return new URLSearchParams(window.location.search).get("debug") === "true"
+   153|  }, [])
+   154|  const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({})
+   155|
+   156|  const readSelectedMedia = useCallback((component: any): SelectedMedia => {
+   157|    if (!component) return null
+   158|    const attrs = component.getAttributes?.() || {}
+   159|    const tagName = String(component.get?.("tagName") || "").toLowerCase()
+   160|    const kindAttr = attrs["data-builder-kind"]
+   161|    const kind = kindAttr || (tagName === "img" ? "image" : tagName === "iframe" ? "iframe" : tagName === "video" ? "video" : null)
+   162|
+   163|    if (!kind) return null
+   164|
+   165|    if (kind === "embed") {
+   166|      const html = component.components?.().map((child: any) => child.toHTML?.() || "").join("") || component.get?.("content") || ""
+   167|      return {
+   168|        id: component.getId?.() || component.cid,
+   169|        kind: "embed",
+   170|        label: "Embed HTML",
+   171|        value: html,
+   172|        placeholder: '<iframe src="https://calendly.com/your-link" class="w-full h-[640px]"></iframe>',
+   173|      }
+   174|    }
+   175|
+   176|    const mediaKind = kind === "image" ? "image" : kind === "video" ? "video" : "iframe"
+   177|    return {
+   178|      id: component.getId?.() || component.cid,
+   179|      kind: mediaKind,
+   180|      label: mediaKind === "image" ? "Image URL" : "Video / iframe URL",
+   181|      value: attrs.src || "",
+   182|      placeholder: mediaKind === "image" ? "https://example.com/photo.jpg" : "https://www.youtube.com/embed/...",
+   183|    }
+   184|  }, [])
+   185|
+   186|  const applySelectedMediaValue = useCallback(() => {
+   187|    const editor = gjsRef.current
+   188|    const selected = editor?.getSelected() as any
+   189|    if (!editor || !selected || !selectedMedia) return
+   190|
+   191|    if (selectedMedia.kind === "embed") {
+   192|      selected.components(selectedMedia.value || '<p class="text-gray-500">Embed HTML goes here</p>')
+   193|    } else {
+   194|      selected.addAttributes({ src: selectedMedia.value })
+   195|    }
+   196|
+   197|    selected.view?.render?.()
+   198|    editor.trigger("component:update", selected)
+   199|    editor.refresh()
+   200|  }, [selectedMedia])
+   201|
+   202|  /* ── init GrapesJS ── */
+   203|  const [useV2, setUseV2] = useState(false)
+   204|
+   205|  useEffect(() => {
+   206|    if (useV2) return; // Skip v1 init if v2 is active
+   207|
+   208|    let destroyed = false
+   209|
+   210|    async function init() {
+   211|      const grapesjs = (await import("grapesjs")).default
+   212|      if (destroyed) return
+   213|
+   214|      const editor = grapesjs.init({
+   215|        container: containerRef.current!,
+   216|        fromElement: false,
+   217|        height: "100%",
+   218|        width: "auto",
+   219|        storageManager: false,
+   220|        assetManager: false,
+   221|        panels: { defaults: [] },
+   222|        layerManager: { showWrapper: false, showDevices: false },
+   223|        selectorManager: { componentFirst: true },
+   224|        styleManager: {
+   225|          sectors: [
+   226|            {
+   227|              name: "Typography",
+   228|              properties: [
+   229|                "font-size",
+   230|                "font-family",
+   231|                "color",
+   232|                "text-align",
+   233|                "line-height",
+   234|              ],
+   235|            },
+   236|            {
+   237|              name: "Spacing",
+   238|              properties: ["padding", "margin"],
+   239|            },
+   240|            {
+   241|              name: "Decorations",
+   242|              properties: ["background-color", "border-radius", "border"],
+   243|            },
+   244|          ],
+   245|        },
+   246|        traitManager: { disabled: true },
+   247|        deviceManager: {
+   248|          devices: [
+   249|            { name: "Desktop", width: "" },
+   250|            { name: "Mobile", width: "375px" },
+   251|          ],
+   252|        },
+   253|        canvas: {
+   254|          styles: [
+   255|            "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
+   256|          ],
+   257|          scripts: [],
+   258|        },
+   259|        blockManager: { custom: true },
+   260|      })
+   261|
+   262|      editor.Panels.removePanel("options")
+   263|      editor.Panels.removePanel("views")
+   264|
+   265|      // Wire up our blocks (they still register so traits/defaults are defined)
+   266|      registerBlocks(editor)
+   267|
+   268|      // Track selected component
+   269|      editor.on("component:selected", (c: any) => {
+   270|        setSelectedId(c?.getId?.() || null)
+   271|        setSelectedMedia(readSelectedMedia(c))
+   272|      })
+   273|      editor.on("component:deselected", () => {
+   274|        setSelectedId(null)
+   275|        setSelectedMedia(null)
+   276|      })
+   277|      editor.on("component:update", (c: any) => {
+   278|        if (editor.getSelected() === c) setSelectedMedia(readSelectedMedia(c))
+   279|      })
+   280|
+   281|      // Validation
+   282|      const validate = () => {
+   283|        const html = editor.getHtml() || ""
+   284|        setValidation({
+   285|          hasHeader: html.includes("<header") || html.includes('data-gjs-type="header"'),
+   286|          hasHero: html.includes('data-gjs-type="hero"'),
+   287|          hasFooter: html.includes("<footer") || html.includes('data-gjs-type="footer"'),
+   288|        })
+   289|        // Refresh debug info
+   290|        if (isDebug) {
+   291|          const blocks = editor.BlockManager.getAll()
+   292|          setDebugInfo({
+   293|            registeredBlocks: Object.keys(blocks).length,
+   294|            blockIds: Object.keys(blocks),
+   295|            componentCount: editor.getComponents?.().length ?? 0,
+   296|            projectId,
+   297|            hasHeader: html.includes("<header"),
+   298|            hasHero: html.includes('data-gjs-type="hero"'),
+   299|            hasFooter: html.includes("<footer"),
+   300|          })
+   301|        }
+   302|      }
+   303|      editor.on("component:add component:remove component:update", validate)
+   304|      validate()
+   305|
+   306|      // Load data — never show blank canvas
+   307|      if (initialProject) {
+   308|        editor.loadProjectData(initialProject as any)
+   309|      } else {
+   310|        // Mount default starter composition so the editor is never blank
+   311|        editor.setComponents(DEFAULT_PAGE_HTML)
+   312|        editor.setStyle("")
+   313|      }
+   314|
+   315|      // Inject section boundary styles into the canvas
+   316|      try {
+   317|        const canvasDoc = editor.Canvas.getDocument()
+   318|        if (canvasDoc) {
+   319|          const styleEl = canvasDoc.createElement("style")
+   320|          styleEl.setAttribute("data-hermes", "section-boundaries")
+   321|          styleEl.textContent = CANVAS_SECTION_STYLES
+   322|          canvasDoc.head.appendChild(styleEl)
+   323|        }
+   324|      } catch (_) { /* canvas may not be ready — styles still apply via config */ }
+   325|
+   326|      gjsRef.current = editor
+   327|      setIsReady(true)
+   328|
+   329|      // Populate debug info
+   330|      if (isDebug) {
+   331|        const blocks = editor.BlockManager.getAll()
+   332|        setDebugInfo({
+   333|          registeredBlocks: Object.keys(blocks).length,
+   334|          blockIds: Object.keys(blocks),
+   335|          componentCount: editor.getComponents?.().length ?? 0,
+   336|          projectId,
+   337|        })
+   338|      }
+   339|
+   340|      // Keyboard delete shortcut
+   341|      const onKey = (e: KeyboardEvent) => {
+   342|        if ((e.key === "Delete" || e.key === "Backspace") && editor.getSelected()) {
+   343|          // Only delete if not actively editing text
+   344|          if (!editor.getEditing()) {
+   345|            editor.runCommand("core:component-delete")
+   346|          }
+   347|        }
+   348|      }
+   349|      window.addEventListener("keydown", onKey)
+   350|
+   351|      return () => window.removeEventListener("keydown", onKey)
+   352|    }
+   353|
+   354|    init()
+   355|
+   356|    return () => {
+   357|      destroyed = true
+   358|      if (gjsRef.current) {
+   359|        gjsRef.current.destroy()
+   360|        gjsRef.current = null
+   361|      }
+   362|    }
+   363|  }, [projectId, readSelectedMedia, useV2, initialProject])
+   364|
+   365|  if (useV2) {
+   366|    return (
+   367|      <GrapesJSEditor 
+   368|        templateHtml={initialProject ? "" : ""} // Map project data here
+   369|        onBack={() => setUseV2(false)}
+   370|        onSave={async (html, css) => {
+   371|           console.log("Saving V2 Blueprint", { html, css })
+   372|           setSaving(true)
+   373|           try {
+   374|             // Use existing draft handler
+   375|             if (onSaveDraft) await onSaveDraft({ html, css, type: 'v2-blueprint' })
+   376|           } finally {
+   377|             setSaving(false)
+   378|           }
+   379|        }}
+   380|      />
+   381|    )
+   382|  }
+   383|
+   384|  /* ── device toggle ── */
+   385|  useEffect(() => {
+   386|    if (!gjsRef.current) return
+   387|    gjsRef.current.setDevice(device)
+   388|  }, [device])
+   389|
+   390|  /* ── actions ── */
+   391|
+   392|  const handleApplyTemplate = useCallback((templateId: string) => {
+   393|    const editor = gjsRef.current
+   394|    if (!editor) return
+   395|    // Load from new template registry (20 templates)
+    const blueprint = getTemplate(templateId)
+    if (!blueprint) {
+      console.warn(`Template ${templateId} not found in registry`)
       return
     }
-    setDeploying(true)
-    try {
-      const json = gjsRef.current.getProjectData()
-      await onDeploy(json)
-    } finally {
-      setDeploying(false)
+    
+    // Convert TemplateBlueprint to EcommerceTemplate format
+    const template = {
+      id: blueprint.id,
+      name: blueprint.name,
+      source: blueprint.source || '',
+      description: blueprint.description || '',
+      bestFor: blueprint.bestFor || '',
+      accent: blueprint.accent || '',
+      content: generateTemplateHtml(blueprint),
     }
-  }, [onDeploy, validation])
-
-  const grouped = CATEGORIES.map((cat) => ({
-    cat,
-    blocks: allBlocks.filter((b) => b.category === cat.name),
-  }))
-
-  return (
-    <div className="flex h-screen w-full bg-white overflow-hidden">
-      {/* ── Left Sidebar ── */}
-      <aside className="w-80 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 select-none">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4 text-slate-400 hover:text-white transition" />
-            </Link>
-            <h2 className="font-bold text-white text-sm tracking-tight">Section Builder</h2>
-          </div>
-          <span className="text-[10px] text-slate-500 font-mono">{projectId.slice(0, 12)}…</span>
-        </div>
-
-        {/* Templates / Blocks */}
-        <div className="border-b border-slate-800 p-3">
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-900 p-1">
-            <button
-              data-testid="template-tab"
-              onClick={() => setSidebarMode("templates")}
-              className={clsx("rounded-lg px-3 py-2 text-xs font-bold transition", sidebarMode === "templates" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}
-            >
-              Templates
-            </button>
-            <button
-              data-testid="blocks-tab"
-              onClick={() => setSidebarMode("blocks")}
-              className={clsx("rounded-lg px-3 py-2 text-xs font-bold transition", sidebarMode === "blocks" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}
-            >
-              Blocks
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {sidebarMode === "templates" ? (
-            <div className="space-y-3 p-3">
-              <div className="rounded-xl border border-blue-500/30 bg-blue-950/30 p-3">
-                <p className="text-xs font-black text-white">Start with Template</p>
-                <p className="mt-1 text-[10px] leading-4 text-slate-400">Pick a starter layout below. Cards are compact and side-by-side for faster selection.</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2" data-testid="template-grid-2col">
-                {ecommerceTemplates.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleApplyTemplate(template.id)}
-                    className="group h-[120px] rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-2 text-left transition hover:border-blue-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    title={`Use ${template.name}`}
-                  >
-                    <div className={clsx("mb-2 h-1.5 rounded-full bg-gradient-to-r", template.accent)} />
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="line-clamp-2 text-[11px] font-black leading-4 text-slate-100">{template.name}</p>
-                      <Plus className="h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-blue-300" />
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-400">{template.description}</p>
-                    <p className="mt-1 line-clamp-1 rounded-md bg-slate-950 px-1.5 py-1 text-[9px] leading-3 text-slate-500">Best for: {template.bestFor}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            grouped.map(({ cat, blocks }) => {
-              const isOpen = openCat === cat.name
-              const meta = catMeta[cat.name] || { icon: "■", color: "text-slate-400" }
-              return (
-                <div key={cat.name} className="border-b border-slate-800 last:border-b-0">
-                  <button
-                    onClick={() => setOpenCat(isOpen ? null : cat.name)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-900 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={clsx("text-sm font-bold", meta.color)}>{meta.icon}</span>
-                      <span className="text-xs font-medium text-slate-300">{cat.name}</span>
-                      <span className="text-[10px] text-slate-600 bg-slate-900 px-1.5 py-0.5 rounded">
-                        {blocks.length}
-                      </span>
-                    </div>
-                    <span className={clsx("text-slate-500 text-xs transition-transform", isOpen ? "rotate-90" : "")}>
-                      ▶
-                    </span>
-                  </button>
-                  {isOpen && (
-                    <div className="px-3 pb-3 grid grid-cols-1 gap-2">
-                      {blocks.map((block) => (
-                        <button
-                          key={block.id}
-                          onClick={() => handleAddBlock(block)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-600 hover:bg-slate-800 transition group text-left"
-                        >
-                          <div className="w-8 h-8 rounded bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-slate-500 transition">
-                            <Plus className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-slate-200 truncate">{block.label}</p>
-                            <p className="text-[10px] text-slate-500 truncate">{cat.name}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-
-        {/* Selected controls */}
-        {selectedId && (
-          <div className="px-4 py-3 border-t border-slate-800 bg-slate-900/50">
-            <p className="text-[10px] text-slate-500 mb-2">Selected Section</p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleMoveUp}
-                disabled={!selectedId}
-                className="p-1.5 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 transition"
-                title="Move up"
-              >
-                <MoveUp className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleMoveDown}
-                disabled={!selectedId}
-                className="p-1.5 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 transition"
-                title="Move down"
-              >
-                <MoveDown className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleDuplicate}
-                disabled={!selectedId}
-                className="p-1.5 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 transition"
-                title="Duplicate"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-              <div className="flex-1" />
-              <button
-                onClick={handleDeleteSelected}
-                disabled={!selectedId}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-900/20 text-red-400 text-xs font-medium hover:bg-red-900/40 transition"
-                title="Delete section"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Remove
-              </button>
-            </div>
-
-            {selectedMedia && (
-              <div data-testid="media-editor-panel" className="mt-3 space-y-2 rounded-lg border border-slate-800 bg-slate-950/70 p-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-slate-500">
-                  {selectedMedia.kind === "image" ? <ImageIcon className="h-3 w-3" /> : <Code2 className="h-3 w-3" />}
-                  {selectedMedia.label}
-                </div>
-                {selectedMedia.kind === "embed" ? (
-                  <textarea
-                    value={selectedMedia.value}
-                    onChange={(event) => setSelectedMedia({ ...selectedMedia, value: event.target.value })}
-                    placeholder={selectedMedia.placeholder}
-                    className="h-24 w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 font-mono text-[11px] text-slate-100 outline-none focus:border-blue-500"
-                  />
-                ) : (
-                  <input
-                    value={selectedMedia.value}
-                    onChange={(event) => setSelectedMedia({ ...selectedMedia, value: event.target.value })}
-                    placeholder={selectedMedia.placeholder}
-                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-[11px] text-slate-100 outline-none focus:border-blue-500"
-                  />
-                )}
-                <button
-                  onClick={applySelectedMediaValue}
-                  className="w-full rounded bg-blue-600 py-2 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-blue-500 transition"
-                >
-                  Apply Changes
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </aside>
-
-      {/* ── Canvas ── */}
-      <main className="flex-1 relative bg-stone-100 flex flex-col">
-        {/* Toolbar */}
-        <div className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-              <button
-                onClick={() => setDevice("Desktop")}
-                className={clsx("p-1.5 rounded-md transition", device === "Desktop" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}
-              >
-                <Monitor className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setDevice("Mobile")}
-                className={clsx("p-1.5 rounded-md transition", device === "Mobile" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}
-              >
-                <Smartphone className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="h-4 w-px bg-slate-200" />
-            <div className="flex items-center gap-3">
-              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasHeader ? "text-emerald-600" : "text-slate-400")}>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasHeader ? "bg-emerald-500" : "bg-slate-300")} />
-                Header
-              </span>
-              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasHero ? "text-emerald-600" : "text-slate-400")}>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasHero ? "bg-emerald-500" : "bg-slate-300")} />
-                Hero
-              </span>
-              <span className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", validation.hasFooter ? "text-emerald-600" : "text-slate-400")}>
-                <div className={clsx("w-1.5 h-1.5 rounded-full", validation.hasFooter ? "bg-emerald-500" : "bg-slate-300")} />
-                Footer
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSaveDraft}
-              disabled={saving || !isReady}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Save Draft
-            </button>
-            <button
-              onClick={handlePreview}
-              disabled={!isReady}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Preview
-            </button>
-            <button
-              onClick={handleDeploy}
-              disabled={deploying || !isReady}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:opacity-50"
-            >
-              {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
-              Submit for Deployment
-            </button>
-          </div>
-        </div>
-
-        {/* GrapesJS Canvas Container */}
-        <div className="flex-1 relative overflow-hidden">
-          <div ref={containerRef} className="h-full w-full" />
-          {!isReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initializing Engine...</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Runtime Debug Panel (hidden unless ?debug=true) ── */}
-        {isDebug && (
-          <div className="border-t border-amber-300 bg-amber-50 px-6 py-3 shrink-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Bug className="w-3.5 h-3.5 text-amber-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Runtime Debug</span>
-              <button
-                onClick={async () => {
-                  const editor = gjsRef.current
-                  if (!editor) return
-                  const json = editor.getProjectData()
-                  const composition = {
-                    html: editor.getHtml(),
-                    css: editor.getCss(),
-                    projectData: json,
-                    blocks: Object.keys(editor.BlockManager.getAll()),
-                    componentCount: (editor.getComponents?.() as any)?.length ?? 0,
-                  }
-                  await navigator.clipboard.writeText(JSON.stringify(composition, null, 2))
-                }}
-                className="ml-auto flex items-center gap-1 px-2 py-1 rounded bg-amber-200 text-[10px] font-bold text-amber-800 hover:bg-amber-300 transition"
-              >
-                <Copy className="w-3 h-3" />
-                Copy State
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-3 text-[10px] font-mono text-amber-900">
-              <div><span className="text-amber-500">Blocks:</span> {String(debugInfo.registeredBlocks ?? "…")}</div>
-              <div><span className="text-amber-500">Components:</span> {String(debugInfo.componentCount ?? "…")}</div>
-              <div><span className="text-amber-500">Project:</span> {projectId.slice(0, 8)}…</div>
-              <div><span className="text-amber-500">Header:</span> {String(debugInfo.hasHeader ?? "…")} · <span className="text-amber-500">Hero:</span> {String(debugInfo.hasHero ?? "…")} · <span className="text-amber-500">Footer:</span> {String(debugInfo.hasFooter ?? "…")}</div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  )
-}
+   396|    if (!template) return
+   397|
+   398|    const ok = window.confirm(
+   399|      `Start with ${template.name}? This replaces the current canvas. Save your draft first if you want to keep it.`
+   400|    )
+   401|    if (!ok) return
+   402|
+   403|    editor.setComponents(template.content)
+   404|    editor.setStyle("")
+   405|    editor.select(null as any)
+   406|    setSelectedId(null)
+   407|    setSelectedMedia(null)
+   408|    editor.trigger("component:update")
+   409|    editor.refresh()
+   410|  }, [])
+   411|
+   412|  const handleAddBlock = useCallback((block: BlockDef) => {
+   413|    const editor = gjsRef.current
+   414|    if (!editor) return
+   415|
+   416|    const added = editor.addComponents(block.content as string)
+   417|    if (added && added[0]) {
+   418|      editor.select(added[0] as any)
+   419|      // Scroll canvas to bottom
+   420|      const canvasDoc = editor.Canvas.getDocument()
+   421|      if (canvasDoc) {
+   422|        canvasDoc.body.scrollTop = canvasDoc.body.scrollHeight
+   423|      }
+   424|    }
+   425|  }, [])
+   426|
+   427|  const handleDeleteSelected = useCallback(() => {
+   428|    const editor = gjsRef.current
+   429|    if (!editor) return
+   430|    const sel = editor.getSelected()
+   431|    if (sel) editor.runCommand("core:component-delete")
+   432|  }, [])
+   433|
+   434|  const handleMoveUp = useCallback(() => {
+   435|    const editor = gjsRef.current
+   436|    if (!editor) return
+   437|    const sel = editor.getSelected()
+   438|    if (!sel) return
+   439|    const prev = (sel as any).prevSibling()
+   440|    if (!prev) return
+   441|    (sel as any).move(prev, { at: -1 })
+   442|  }, [])
+   443|
+   444|  const handleMoveDown = useCallback(() => {
+   445|    const editor = gjsRef.current
+   446|    if (!editor) return
+   447|    const sel = editor.getSelected()
+   448|    if (!sel) return
+   449|    const next = (sel as any).nextSibling()
+   450|    if (!next) return
+   451|    (sel as any).move(next, { at: 0 })
+   452|  }, [])
+   453|
+   454|  const handleDuplicate = useCallback(() => {
+   455|    const editor = gjsRef.current
+   456|    if (!editor) return
+   457|    const sel = editor.getSelected()
+   458|    if (!sel) return
+   459|    const cloned = (sel as any).clone()
+   460|    if (!cloned) return
+   461|    (cloned as any).move(sel, { at: 1 })
+   462|    editor.select(cloned as any)
+   463|  }, [])
+   464|
+   465|  const handleSaveDraft = useCallback(async () => {
+   466|    if (!gjsRef.current || !onSaveDraft) return
+   467|    setSaving(true)
+   468|    try {
+   469|      const json = gjsRef.current.getProjectData()
+   470|      await onSaveDraft(json)
+   471|    } finally {
+   472|      setSaving(false)
+   473|    }
+   474|  }, [onSaveDraft])
+   475|
+   476|  const handlePreview = useCallback(() => {
+   477|    if (!gjsRef.current) return
+   478|    const html = gjsRef.current.getHtml()
+   479|    const css = gjsRef.current.getCss()
+   480|    const previewHtml = `<!DOCTYPE html>
+   481|<html lang="en">
+   482|<head>
+   483|  <meta charSet="utf-8" />
+   484|  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   485|  <title>Marketplace Preview</title>
+   486|  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+   487|  <style>body{margin:0;background:#fff;} iframe{max-width:100%;} ${css}</style>
+   488|</head>
+   489|<body>${html}</body>
+   490|</html>`
+   491|    const blob = new Blob([previewHtml], { type: "text/html" })
+   492|    const url = URL.createObjectURL(blob)
+   493|    window.open(url, "_blank")
+   494|  }, [])
+   495|
+   496|  const handleDeploy = useCallback(async () => {
+   497|    if (!gjsRef.current || !onDeploy) return
+   498|    if (!validation.hasHeader || !validation.hasHero || !validation.hasFooter) {
+   499|      alert("Please add at least one Header, one Hero, and one Footer before deploying.")
+   500|      return
+   501|
