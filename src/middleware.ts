@@ -41,9 +41,9 @@ async function getRegionMap(cacheId: string) {
     })
 
     if (!regions?.length) {
-      throw new Error(
-        "No regions found. Please set up regions in your Medusa Admin."
-      )
+      console.error("No regions found. Please set up regions in your Medusa Admin.")
+      // Return early with default response instead of throwing
+      return updateSession(request, NextResponse.next())
     }
 
     // Create a map of country codes to regions.
@@ -135,9 +135,6 @@ export async function middleware(request: NextRequest) {
 
   const host = request.headers.get("host") || ""
   
-  // DEBUGGING: Log host and subdomain
-  console.log("HOST:", host)
-  
   const isLocalhost = host.includes("localhost")
   const baseDomain = isLocalhost ? "localhost:8000" : "edgemarketplacehub.com"
   
@@ -147,11 +144,7 @@ export async function middleware(request: NextRequest) {
   if (isSubdomain) {
     const subdomain = host.replace(`.${baseDomain}`, "")
     
-    // DEBUGGING: Log subdomain
-    console.log("SUBDOMAIN:", subdomain)
-    
     // Rewrite to the storefront route
-    // This will be handled by /app/storefront/[tenant]/page.tsx
     const response = NextResponse.rewrite(new URL(`/storefront/${subdomain}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url))
     
     // Set tenant header for downstream use
