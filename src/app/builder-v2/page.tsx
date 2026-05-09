@@ -18,7 +18,6 @@ import {
 } from "lucide-react"
 import type { TemplateBlueprint, ThemeVariant } from "@/templates/registry/types"
 import { TemplateSelector } from "@/components/TemplateSelector"
-import { TemplateDetail } from "@/components/TemplateDetail"
 import {
   composePage,
   renderPage,
@@ -27,9 +26,9 @@ import {
 import type { CompositionResult } from "@/composer"
 
 /* ──────────────────────────────────────────────────────────────
- * View state machine
+ * View state machine — simplified: gallery → detail page (no in-page detail)
  * ────────────────────────────────────────────────────────────── */
-type View = "gallery" | "detail" | "composed"
+type View = "gallery" | "composed"
 
 /* ──────────────────────────────────────────────────────────────
  * Theme variant → engine theme ID mapping
@@ -469,11 +468,10 @@ export default function BuilderV2Page() {
   const [activeThemeVariant, setActiveThemeVariant] = useState<string>("")
   const [showSidebar, setShowSidebar] = useState(true)
 
-  /* ── Template selection → detail view ── */
+  /* ── Template selection → navigate to detail page ── */
   const handleSelectTemplate = useCallback((template: TemplateBlueprint) => {
-    setSelectedTemplate(template)
-    setView("detail")
-  }, [])
+    router.push(`/builder-v2/${template.id}`)
+  }, [router])
 
   /* ── Back to gallery from detail ── */
   const handleBackToGallery = useCallback(() => {

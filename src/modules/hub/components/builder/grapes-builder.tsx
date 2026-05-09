@@ -82,7 +82,7 @@ export default function GrapesBuilder({ projectId, templateId, initialProject, o
         traitManager: { disabled: true },
         deviceManager: {
           devices: [
-            { name: "Desktop", width: "" },
+            { name: "Desktop", width: "100%" },
             { name: "Mobile", width: "375px" },
           ],
         },
