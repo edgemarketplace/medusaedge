@@ -1,4 +1,4 @@
-import { sectionRegistry } from '../sections';
+import { sectionRegistry } from '../sections/registry';
 
 export default function marketplacePlugin(editor) {
   const bm = editor.BlockManager;
