@@ -384,6 +384,8 @@ function TopBar({
   activeThemeVariant,
   onThemeVariantChange,
   onBackToTemplates,
+  onContinueToEditor,
+  isEditorReady,
 }: {
   templateName: string
   themeVariants: ThemeVariant[]
