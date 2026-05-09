@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation';
 import { getTemplate } from '@/templates/registry';
-import { composePage } from '@/lib/grapes/compose-page';
+import { composePage, renderPage } from '@/composer';
 import Link from 'next/link';
 
-export default async function TemplateDetailPage({ params }: { params: { templateId: string } }) {
+export default function TemplateDetailPage({ params }: { params: { templateId: string } }) {
   const template = getTemplate(params.templateId);
   if (!template) notFound();
 
-  const PagePreview = composePage(template.sections, template.theme);
+  const composition = composePage(template);
+  const previewElements = renderPage(composition);
 
   return (
     <div className="min-h-screen bg-white">
@@ -51,7 +52,7 @@ export default async function TemplateDetailPage({ params }: { params: { templat
             <h2 className="text-sm font-medium text-slate-600">Pre-Customized Page Preview</h2>
           </div>
           <div className="p-4">
-            <PagePreview />
+            <div className="flex flex-col">{previewElements}</div>
           </div>
         </div>
 
