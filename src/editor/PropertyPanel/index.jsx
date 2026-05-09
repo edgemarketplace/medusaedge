@@ -1,5 +1,5 @@
 import React from 'react';
-import { sectionRegistry } from '../sections/index.jsx';
+import { sectionRegistry } from '../sections';
 
 const PropertyPanel = ({ activeComponent, onUpdate }) => {
   if (!activeComponent) return <div className="p-4 text-gray-400">Select a section to edit properties</div>;
