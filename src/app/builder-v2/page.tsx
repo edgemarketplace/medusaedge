@@ -433,8 +433,19 @@ function TopBar({
         ))}
       </div>
 
-      {/* Right: Continue to Editor */}
-      
+      {/* Right: Edit in GrapesJS */}
+      <button
+        onClick={onContinueToEditor}
+        disabled={!isEditorReady}
+        className={`shrink-0 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+          isEditorReady
+            ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-200"
+            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+        }`}
+      >
+        <ExternalLink className="h-4 w-4" />
+        Edit in GrapesJS
+      </button>
     </div>
   )
 }
@@ -497,6 +508,12 @@ export default function BuilderV2Page() {
     setComposition(null)
     setActiveThemeVariant("")
   }, [])
+
+  /* ── Continue to GrapesJS Editor ── */
+  const handleContinueToEditor = useCallback(() => {
+    if (!selectedTemplate) return
+    router.push(`/builder-v2/editor/${selectedTemplate.id}`)
+  }, [selectedTemplate, router])
 
   
 
@@ -595,7 +612,8 @@ export default function BuilderV2Page() {
           activeThemeVariant={activeThemeVariant}
           onThemeVariantChange={handleThemeVariantChange}
           onBackToTemplates={handleBackToTemplates}
-            isEditorReady={true}
+          onContinueToEditor={handleContinueToEditor}
+          isEditorReady={!!composition}
         />
 
         {/* Main area: preview + sidebar */}
