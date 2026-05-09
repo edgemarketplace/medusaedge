@@ -55,9 +55,6 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           },
         })
         
-        // Expose editor globally for debugging
-        (window as any).editor = editor
-
         // Register all 30 pre-approved blocks
         setMessage('Registering blocks...')
         registerBlocks(editor)
@@ -118,9 +115,6 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           `
         }
         
-        console.log('[GrapesBuilder] initialHtml length:', initialHtml.length)
-        console.log('[GrapesBuilder] initialHtml preview:', initialHtml.substring(0, 200))
-
         setMessage('Adding content to editor...')
         
         // Set the HTML content without CSP meta tag (CSP should be in iframe head, not body)
@@ -140,14 +134,12 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           }
           setIframeInfo(info)
           
-          // Force iframe visibility and size
-          iframe.style.width = '1200px'
-          iframe.style.height = '800px'
+          // Force iframe visibility and responsive size
+          iframe.style.width = '100%'
+          iframe.style.height = '100%'
+          iframe.style.minHeight = '800px'
           iframe.style.display = 'block'
           iframe.style.visibility = 'visible'
-          iframe.style.position = 'absolute'
-          iframe.style.top = '0'
-          iframe.style.left = '0'
         }
         
         editorRef.current = editor
@@ -204,7 +196,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
       </aside>
 
       {/* Canvas area */}
-      <div className="flex-1 relative bg-gray-100" style={{ minHeight: '500px' }}>
+      <div className="flex-1 relative bg-gray-100" style={{ height: '100%' }}>
         {status === 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-gray-100">
             <div className="text-center">
