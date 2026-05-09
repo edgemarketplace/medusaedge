@@ -1,6 +1,6 @@
 import React from 'react';
-import HeroEditorial from './HeroEditorial.jsx';
-import ProductGrid from './ProductGrid.jsx';
+import HeroEditorial from '../../sections/HeroEditorial.jsx';
+import ProductGrid from '../../sections/ProductGrid.jsx';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 export const heroEditorial = {
