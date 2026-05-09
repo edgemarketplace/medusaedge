@@ -1,14 +1,30 @@
-import { notFound } from 'next/navigation';
-import { getTemplate } from '@/templates/registry';
-import { composePage, renderPage } from '@/composer';
-import Link from 'next/link';
+"use client"
 
-export default function TemplateDetailPage({ params }: { params: { templateId: string } }) {
-  const template = getTemplate(params.templateId);
-  if (!template) notFound();
+import { useEffect, useState } from 'react'
+import { useParams, notFound } from 'next/navigation'
+import { getTemplate } from '@/templates/registry'
+import { composePage, renderPage } from '@/composer'
+import Link from 'next/link'
 
-  const composition = composePage(template);
-  const previewElements = renderPage(composition);
+export default function TemplateDetailPage() {
+  const params = useParams<{ templateId: string }>()
+  const [template, setTemplate] = useState<ReturnType<typeof getTemplate>>(undefined)
+  const [previewElements, setPreviewElements] = useState<React.ReactNode>(null)
+
+  useEffect(() => {
+    const t = getTemplate(params.templateId)
+    if (!t) {
+      notFound()
+      return
+    }
+    setTemplate(t)
+    
+    const composition = composePage(t)
+    const elements = renderPage(composition)
+    setPreviewElements(elements)
+  }, [params.templateId])
+
+  if (!template) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-white">
@@ -85,5 +101,5 @@ export default function TemplateDetailPage({ params }: { params: { templateId: s
         </div>
       </div>
     </div>
-  );
+  )
 }
