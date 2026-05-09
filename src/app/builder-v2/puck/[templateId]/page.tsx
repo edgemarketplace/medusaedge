@@ -3,6 +3,8 @@
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 
+export const dynamic = 'force-dynamic';
+
 // Sample data to prove it works
 const initialData = {
   root: { props: {} },
