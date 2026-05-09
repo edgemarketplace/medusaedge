@@ -1,74 +1,110 @@
 // ══════════════════════════════════════════════════════════════════
-// Template → Puck Converter
+// Puck Converter (Theme-Aware)
 // ══════════════════════════════════════════════════════════════════
-// Converts Edge Marketplace Hub template system to Puck editor format
+// Converts Edge Marketplace Hub template system → Puck editor format.
+// NOW WITH THEME TOKENS: components receive (props, theme) for styling.
 //
-// Usage:
-//   import { getPuckConfig, getPuckData } from '@/lib/puck/converter'
-//   const config = getPuckConfig()
-//   const data = getPuckData(templateId)
+// Architecture:
+//   Template Registry → getTemplate() → TemplateBlueprint
+//                                    ↓
+//   composer.composePage() → CompositionResult (sections resolved)
+//                                    ↓
+//   converter.getPuckConfig() → Puck components (with theme injection)
+//   converter.getPuckData() → Puck data (content array)
+//                                    ↓
+//   Puck Editor (visual editing with theme-aware rendering)
 // ══════════════════════════════════════════════════════════════════
 
 import type { Config, Data } from "@puckeditor/core"
-import type { TemplateBlueprint, SectionBlueprint } from "../../templates/registry/types"
-import { getTemplate } from "../../templates/registry"
-import { composePage, CompositionResult } from "../../composer"
-import { sectionRegistry, RegistryEntry } from "../../sections"
+import { getTemplate, type TemplateBlueprint } from "@/templates/registry"
+import { composePage, type CompositionResult } from "@/composer"
+import { sectionRegistry, type RegistryEntry } from "@/sections"
+import { themes, type ThemeTokens, type ThemeName } from "@/themes/tokens"
+import React from "react"
 
-// Map section schema field types to Puck field types
-function mapFieldType(type: string): string {
-  const typeMap: Record<string, string> = {
-    text: "text",
-    textarea: "textarea",
-    number: "number",
-    select: "select",
-    image: "text", // Puck doesn't have native image picker yet
-    boolean: "select",
-  }
-  return typeMap[type] || "text"
-}
+// ══════════════════════════════════════════════════════════════════
+// THEME CONTEXT (injected into Puck components)
+// ══════════════════════════════════════════════════════════════════
 
+// Default theme for initial render
+const defaultTheme: ThemeTokens = themes["luxury-fashion"]
+
+// ══════════════════════════════════════════════════════════════════
 // Convert section registry to Puck components config
-export function getPuckConfig(): Config["components"] {
+// NOW: Each component receives (props, theme) for theme-aware rendering
+// ══════════════════════════════════════════════════════════════════
+
+export function getPuckConfig(
+  themeName: ThemeName = "luxury-fashion"
+): Config["components"] {
+  const theme = themes[themeName] || defaultTheme
   const components: Config["components"] = {}
 
-  console.log("[Puck Converter] Section registry keys:", Object.keys(sectionRegistry))
+  console.log(`[Puck Converter] Processing ${Object.keys(sectionRegistry).length} sections with theme: ${themeName}`)
 
-  for (const [sectionId, entry] of Object.entries(sectionRegistry) as [string, RegistryEntry][]) {
-    // Skip if no schema defined
-    if (!entry.schema) {
-      console.log(`[Puck Converter] Skipping ${sectionId} - no schema`)
+  for (const [sectionId, entry] of Object.entries(sectionRegistry)) {
+    const registryEntry = entry as RegistryEntry
+    const schema = registryEntry.schema
+
+    if (!schema) {
+      console.warn(`[Puck Converter] No schema found for ${sectionId}, skipping`)
       continue
     }
 
-    console.log(`[Puck Converter] Processing ${sectionId}:`, entry.schema)
-
-    // Convert schema to Puck fields
+    // Convert schema fields to Puck fields
     const fields: Record<string, any> = {}
-    for (const [fieldName, fieldDef] of Object.entries(entry.schema) as [string, any][]) {
-      fields[fieldName] = {
-        type: mapFieldType(fieldDef.type),
-        label: fieldDef.label || fieldName,
-        ...(fieldDef.options ? { options: fieldDef.options } : {}),
-        ...(fieldDef.default ? { defaultValue: fieldDef.default } : {}),
+
+    for (const [key, fieldConfig] of Object.entries(schema)) {
+      if (fieldConfig.type === "text") {
+        fields[key] = { type: "text" }
+      } else if (fieldConfig.type === "textarea") {
+        fields[key] = { type: "textarea" }
+      } else if (fieldConfig.type === "image") {
+        fields[key] = { type: "image" }
+      } else if (fieldConfig.type === "select") {
+        fields[key] = {
+          type: "select",
+          options: fieldConfig.options || [],
+        }
+      } else if (fieldConfig.type === "number") {
+        fields[key] = { type: "number" }
+      } else if (fieldConfig.type === "boolean") {
+        fields[key] = { type: "radio", options: [
+          { label: "Yes", value: true },
+          { label: "No", value: false },
+        ]}
+      } else {
+        // Default to text
+        fields[key] = { type: "text" }
       }
     }
 
-    // Create Puck render function that wraps the React component
+    // Create render function that injects theme
+    // The component receives (props, theme) instead of just (props)
+    const Component = registryEntry.component
+
     components[sectionId] = {
       fields,
       render: (props: any) => {
-        const Component = entry.component
-        return Component(props)
+        // Inject theme into component props
+        // Components should accept `theme` as second arg or use context
+        return <Component {...props} theme={theme} />
       },
+      // Puck 0.21+ API: add labels for better UX
+      label: sectionId,
     }
+
+    console.log(`[Puck Converter] Mapped ${sectionId} with fields:`, Object.keys(fields))
   }
 
-  console.log("[Puck Converter] Generated Puck config:", Object.keys(components))
+  console.log(`[Puck Converter] Generated Puck config with ${Object.keys(components).length} components`)
   return components
 }
 
+// ══════════════════════════════════════════════════════════════════
 // Convert template to Puck data format
+// ══════════════════════════════════════════════════════════════════
+
 export function getPuckData(templateId: string): Data | null {
   const template = getTemplate(templateId)
   if (!template) {
@@ -105,4 +141,16 @@ export function getPuckData(templateId: string): Data | null {
 
   console.log("[Puck Converter] Puck data:", JSON.stringify(data, null, 2))
   return data
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Theme helpers for Puck editor
+// ══════════════════════════════════════════════════════════════════
+
+export function getThemeNames(): ThemeName[] {
+  return Object.keys(themes) as ThemeName[]
+}
+
+export function getTheme(themeName: ThemeName): ThemeTokens {
+  return themes[themeName] || defaultTheme
 }

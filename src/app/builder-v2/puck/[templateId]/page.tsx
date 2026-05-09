@@ -4,77 +4,104 @@ import { useState, useEffect } from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { useParams } from "next/navigation";
-import { getPuckConfig, getPuckData } from "@/lib/puck/converter";
+import { getPuckConfig, getPuckData, getThemeNames, getTheme } from "@/lib/puck/converter";
+import type { ThemeName, ThemeTokens } from "@/themes/tokens";
+import { emitCSSVariables } from "@/themes/tokens";
 
 export const dynamic = 'force-dynamic';
 
 export default function PuckEditorPage() {
   const params = useParams<{ templateId: string }>();
-  const templateId = params.templateId;
+  const templateId = params.templateId as string;
 
-  const [config, setConfig] = useState<ReturnType<typeof getPuckConfig> | null>(null);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [themeName, setThemeName] = useState<ThemeName>("luxury-fashion");
+  const [theme, setTheme] = useState<ThemeTokens>(getTheme(themeName));
+  const [themeNames] = useState<ThemeName[]>(getThemeNames());
 
+  // Update theme when themeName changes
   useEffect(() => {
-    if (!templateId) {
-      setError("No template ID provided");
-      setLoading(false);
-      return;
+    const newTheme = getTheme(themeName);
+    setTheme(newTheme);
+
+    // Emit CSS variables for runtime theme switching
+    const css = emitCSSVariables(newTheme);
+    const styleId = "theme-variables";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
     }
+    styleEl.textContent = css;
 
-    try {
-      const puckConfig = getPuckConfig();
-      const puckData = getPuckData(templateId);
+    console.log(`[Puck Editor] Switched to theme: ${themeName}`);
+  }, [themeName]);
 
-      if (!puckData) {
-        setError(`Template "${templateId}" not found`);
-        setLoading(false);
-        return;
-      }
+  // Get Puck config with theme-aware components
+  const config = getPuckConfig(themeName);
 
-      setConfig(puckConfig);
-      setData(puckData);
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message || "Failed to load template");
-      setLoading(false);
-    }
-  }, [templateId]);
+  // Get Puck data from template system
+  const data = getPuckData(templateId);
 
-  if (loading) {
+  if (!data) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading template...</p>
-        </div>
+        <p className="text-lg text-gray-500">Loading template...</p>
       </div>
     );
   }
 
-  if (error || !config || !data) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600">{error || "Failed to load editor"}</p>
-        </div>
-      </div>
-    );
-  }
+  const handlePublish = (data: any) => {
+    console.log("[Puck Editor] Publishing data:", data);
+    alert("Publish clicked! Check console for data.");
+    // TODO: Save to Supabase or API endpoint
+  };
 
   return (
-    <div style={{ height: "100vh" }}>
-      <Puck
-        config={{ components: config }}
-        data={data}
-        onPublish={(publishedData) => {
-          console.log("Published data:", publishedData);
-          alert("Data saved! Check console.");
-        }}
-      />
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Theme Switcher Header */}
+      <div style={{
+        padding: "0.5rem 1rem",
+        borderBottom: "1px solid #e5e5e5",
+        backgroundColor: "#fafafa",
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+      }}>
+        <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#555" }}>
+          Theme:
+        </span>
+        <select
+          value={themeName}
+          onChange={(e) => setThemeName(e.target.value as ThemeName)}
+          style={{
+            padding: "0.375rem 0.75rem",
+            borderRadius: "0.25rem",
+            border: "1px solid #ccc",
+            fontSize: "0.875rem",
+            backgroundColor: "white",
+            cursor: "pointer",
+          }}
+        >
+          {themeNames.map((name) => (
+            <option key={name} value={name}>
+              {name.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+            </option>
+          ))}
+        </select>
+        <span style={{ fontSize: "0.75rem", color: "#888", marginLeft: "auto" }}>
+          Template: {templateId}
+        </span>
+      </div>
+
+      {/* Puck Editor */}
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <Puck
+          config={{ components: config }}
+          data={data}
+          onPublish={handlePublish}
+        />
+      </div>
     </div>
   );
 }
