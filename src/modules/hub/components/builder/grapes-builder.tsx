@@ -55,22 +55,6 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           },
         })
 
-        // Inject CSP meta tag into iframe head after canvas is ready
-        editor.on('canvas:ready', () => {
-          try {
-            const iframe = editor.Canvas.getIframe()
-            if (iframe?.contentDocument?.head) {
-              const meta = iframe.contentDocument.createElement('meta')
-              meta.httpEquiv = 'Content-Security-Policy'
-              meta.content = "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;"
-              iframe.contentDocument.head.appendChild(meta)
-              console.log('[GrapesBuilder] CSP meta tag injected into iframe head')
-            }
-          } catch (e) {
-            console.warn('[GrapesBuilder] Failed to inject CSP meta:', e)
-          }
-        })
-
         // Register all 30 pre-approved blocks
         setMessage('Registering blocks...')
         registerBlocks(editor)
