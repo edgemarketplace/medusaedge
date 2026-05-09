@@ -50,6 +50,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
           canvas: {
             styles: [
               'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
+              'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
             ],
           },
         })
@@ -116,20 +117,8 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
 
         setMessage('Adding content to editor...')
         
-        // Add CSP meta tag to allow eval in iframe
-        const htmlWithCSP = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
-          </head>
-          <body>
-            ${initialHtml}
-          </body>
-          </html>
-        `
-        
-        editor.setComponents(htmlWithCSP)
+        // Set the HTML content without CSP meta tag (CSP should be in iframe head, not body)
+        editor.setComponents(initialHtml)
         
         // Check iframe visibility
         await new Promise(r => setTimeout(r, 1000))
