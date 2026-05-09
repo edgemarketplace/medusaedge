@@ -5,9 +5,9 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { getTemplate } from "@/templates/registry"
 import { composePage } from "@/composer"
-import type { CompositionResult } from "@/composer"
 import { registerBlocks } from "@/lib/grapes/register-blocks"
 import { createRoot, Root } from "react-dom/client"
+import { renderToStaticMarkup } from "react-dom/server"
 
 export default function GrapesBuilder({ templateId }: { templateId?: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,38 +37,6 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         
         if (destroyed) return
         
-        setMessage('Loading template...')
-        
-        // Load template if templateId provided
-        let initialHtml = ''
-        if (templateId) {
-          try {
-            const template = getTemplate(templateId)
-            if (template) {
-              const composition: CompositionResult = composePage(template)
-              // Render React elements to HTML
-              const tempDiv = document.createElement('div')
-              // Use ReactDOM to render the composition
-              // Since we can't easily render React to string in client, we'll build a basic HTML structure
-              // that matches the template's sections
-              initialHtml = `<div class="template-wrapper" data-template="${templateId}">`
-              
-              // Add sections based on composition
-              if (composition.sections && Array.isArray(composition.sections)) {
-                composition.sections.forEach((section: any) => {
-                  initialHtml += `<div class="section-${section.sectionId}" data-section-id="${section.sectionInstanceId}">${section.sectionId}</div>`
-                })
-              }
-              
-              initialHtml += `</div>`
-              setMessage(`Loaded template: ${template.name} (${composition.sections?.length || 0} sections)`)
-            }
-          } catch (e: any) {
-            console.warn('Failed to load template:', e)
-            setMessage('Using empty canvas (template load failed)')
-          }
-        }
-        
         setMessage('Creating editor...')
         
         const editor = grapesjs.init({
@@ -91,22 +59,67 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         setMessage('Registering blocks...')
         registerBlocks(editor)
 
-        await new Promise(r => setTimeout(r, 1000))
+        await new Promise(r => setTimeout(r, 500))
 
-        setMessage('Adding content...')
+        // Load template if provided
+        setMessage('Loading template...')
+        let initialHtml = ''
         
-        // Use template HTML or default
-        const html = initialHtml || `
-          <div style="padding: 40px; font-family: sans-serif;">
-            <h1 style="font-size: 32px; font-weight: bold; margin-bottom: 16px; color: black;">Start Editing</h1>
-            <p style="color: #666; margin-bottom: 24px;">Drag blocks from the left panel to start building.</p>
-          </div>
-        `
-        
-        editor.setComponents(html)
+        if (templateId) {
+          try {
+            const template = getTemplate(templateId)
+            if (template) {
+              const composition = composePage(template)
+              
+              // Build HTML from composition sections
+              // For now, create a basic structure with section placeholders
+              // In production, you'd render each section component to HTML
+              let sectionsHtml = ''
+              if (composition.sections && Array.isArray(composition.sections)) {
+                composition.sections.forEach((section: any) => {
+                  sectionsHtml += `
+                    <div class="section-block" data-section-id="${section.sectionInstanceId}" data-section-type="${section.sectionId}">
+                      <div class="section-placeholder p-4 border border-dashed border-gray-300 rounded">
+                        <p class="text-sm text-gray-500">${section.sectionId.replace(/-/g, ' ').toUpperCase()}</p>
+                      </div>
+                    </div>
+                  `
+                })
+              }
+              
+              initialHtml = `
+                <div class="template-container" data-template="${templateId}">
+                  <div class="template-header p-4 bg-slate-100 border-b">
+                    <h1 class="text-xl font-bold">${template.name}</h1>
+                    <p class="text-sm text-gray-600">${template.description || ''}</p>
+                  </div>
+                  <div class="template-body">
+                    ${sectionsHtml}
+                  </div>
+                </div>
+              `
+              setMessage(`Loaded: ${template.name} (${composition.sections?.length || 0} sections)`)
+            }
+          } catch (e: any) {
+            console.warn('[GrapesBuilder] Template load failed:', e)
+            setMessage('Template load failed, using empty canvas')
+          }
+        }
+
+        if (!initialHtml) {
+          initialHtml = `
+            <div style="padding: 40px; font-family: sans-serif;">
+              <h1 style="font-size: 32px; font-weight: bold; margin-bottom: 16px; color: black;">Start Editing</h1>
+              <p style="color: #666; margin-bottom: 24px;">Drag blocks from the left panel to start building.</p>
+            </div>
+          `
+        }
+
+        setMessage('Adding content to editor...')
+        editor.setComponents(initialHtml)
         
         // Check iframe visibility
-        await new Promise(r => setTimeout(r, 500))
+        await new Promise(r => setTimeout(r, 1000))
         
         const iframe = containerRef.current?.querySelector('iframe') as HTMLIFrameElement
         if (iframe) {
@@ -180,7 +193,7 @@ export default function GrapesBuilder({ templateId }: { templateId?: string }) {
         </div>
         
         {/* Block panel */}
-        <div className="block-panel flex-1 overflow-y-auto p-4">
+        <div className="block-panel flex-1 overflow-y-auto p-4 border-t border-slate-800">
           {/* Blocks will be injected here by GrapesJS block manager */}
         </div>
       </aside>
