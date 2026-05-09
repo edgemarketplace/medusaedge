@@ -84,21 +84,25 @@ export function getPuckData(templateId: string): Data | null {
   console.log("[Puck Converter] Composition result:", composition)
 
   // Convert sections to Puck content format
-  const content = composition.sections.map((section) => ({
-    type: section.sectionId,
-    props: {
-      id: section.sectionInstanceId,
-      ...section.props,
-    },
-  }))
+  // IMPORTANT: Puck expects 'type' to match a key in config.components
+  const content = composition.sections.map((section) => {
+    console.log(`[Puck Converter] Mapping section: ${section.sectionId} (instance: ${section.sectionInstanceId})`)
+    return {
+      type: section.sectionId, // This MUST match a key in config.components
+      props: {
+        id: section.sectionInstanceId,
+        ...section.props,
+      },
+    }
+  })
 
-  // Build Puck data
+  // Build Puck data - ensure it matches Puck's expected format
   const data: Data = {
     root: { props: {} },
     content,
     zones: {},
   }
 
-  console.log("[Puck Converter] Puck data:", data)
+  console.log("[Puck Converter] Puck data:", JSON.stringify(data, null, 2))
   return data
 }
