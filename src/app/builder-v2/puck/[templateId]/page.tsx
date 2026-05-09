@@ -1,5 +1,5 @@
 import { Puck } from "@puckeditor/core";
-import "@puckeditor/core/dist/styles.css";
+import "@puckeditor/core/puck.css";
 
 // Sample data to prove it works
 const initialData = {
