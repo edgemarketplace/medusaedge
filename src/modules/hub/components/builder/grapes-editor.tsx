@@ -81,35 +81,65 @@ function renderSectionContent(section: { sectionId: string; props: Record<string
   return content
 }
 
-// Generate HTML structure from template sections with actual content
+// Generate HTML structure from template sections with actual content and full styling
 function generateTemplateHTML(template: TemplateBlueprint): string {
+  // Build CSS based on template theme
+  const themeColors: Record<string, { primary: string; bg: string; text: string }> = {
+    athletic: { primary: '#000', bg: '#fff', text: '#333' },
+    premium: { primary: '#1a1a2e', bg: '#f5f5f5', text: '#333' },
+    boutique: { primary: '#8b5cf6', bg: '#faf5ff', text: '#333' },
+    minimal: { primary: '#000', bg: '#fff', text: '#666' },
+    editorial: { primary: '#1a1a2e', bg: '#fff', text: '#333' },
+  }
+  const theme = themeColors[template.theme] || themeColors.minimal
+  
   return `
     <!DOCTYPE html>
     <html>
     <head>
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; }
-        .section { border: 1px dashed #ccc; padding: 20px; margin: 10px 0; }
-        .section-title { color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; }
-        .section-headline { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
-        .section-subheadline { color: #666; margin-bottom: 16px; font-size: 16px; }
-        .section-brand { font-weight: bold; font-size: 24px; margin-bottom: 8px; }
-        .section-description { color: #666; margin-bottom: 12px; }
-        .announcement-text { background: #f0f0f0; padding: 8px 16px; border-radius: 4px; display: inline-block; }
-        .section-cta { background: #000; color: #fff; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px; }
-        .section-items { color: #666; font-size: 14px; margin-top: 8px; }
-        .item { margin-right: 16px; }
-        .section-links { color: #666; margin-top: 8px; }
-        .section-categories { display: flex; gap: 16px; margin-top: 12px; }
-        .category { background: #f0f0f0; padding: 8px 16px; border-radius: 4px; }
-        .product-limit { color: #666; margin-top: 8px; }
-        .section-bg-hint { margin-top: 8px; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .section { margin: 0; padding: 40px 20px; }
+        .section-title { display: none; } /* Hide technical labels in preview */
+        .section-content { max-width: 1280px; margin: 0 auto; }
+        
+        /* Announcement bar */
+        .announcement-text { background: ${theme.primary}; color: #fff; padding: 8px 16px; text-align: center; font-size: 14px; }
+        
+        /* Header */
+        .section-brand { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 16px; }
+        .section-links { display: flex; gap: 24px; font-size: 14px; color: ${theme.text}; }
+        
+        /* Hero */
+        .section-headline { font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; letter-spacing: -1px; }
+        .section-subheadline { font-size: 20px; color: #666; margin-bottom: 24px; max-width: 600px; }
+        .section-cta { background: ${theme.primary}; color: #fff; padding: 16px 32px; font-size: 16px; font-weight: 600; border: none; cursor: pointer; border-radius: 4px; }
+        
+        /* Items strip */
+        .section-items { display: flex; gap: 32px; justify-content: center; padding: 20px 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
+        .item { font-size: 14px; color: ${theme.text}; font-weight: 500; }
+        
+        /* Categories */
+        .section-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 20px; }
+        .category { background: #f5f5f5; padding: 24px; text-align: center; font-weight: 600; border-radius: 8px; }
+        
+        /* Product grid */
+        .product-limit { font-size: 14px; color: #666; margin-top: 12px; }
+        
+        /* Background image hint */
+        .section-bg-hint { margin-top: 16px; padding: 12px; background: #f0f0f0; border-radius: 4px; font-size: 12px; color: #999; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+          .section-headline { font-size: 36px; }
+          .section-links { flex-direction: column; gap: 12px; }
+          .section-items { flex-wrap: wrap; }
+        }
       </style>
     </head>
     <body>
       <div class="template-container">
-        <h1>${template.name}</h1>
-        <p class="template-description">${template.description}</p>
         ${template.composition.sections
           .map(
             (s) =>
