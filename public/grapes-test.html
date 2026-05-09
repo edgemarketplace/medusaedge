@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GrapesJS Standalone Test</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #gjs { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="gjs">
+    <h1>Test Content</h1>
+    <p>If you can see this and NO CSP eval errors in console, the issue is with the builder wrapper.</p>
+  </div>
+  
+  <script src="https://unpkg.com/grapesjs"></script>
+  <script>
+    window.onload = function() {
+      const editor = grapesjs.init({
+        container: '#gjs',
+        height: '100%',
+        width: '100%',
+        fromElement: true,
+        storageManager: false,
+      });
+      console.log('GrapesJS loaded successfully');
+    };
+  </script>
+</body>
+</html>
