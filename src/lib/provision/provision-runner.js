@@ -35,33 +35,49 @@ export async function runProvisioning(intake) {
   console.log("Using template:", intake.templateRepo)
 
   try {
-    // 🐙 STEP 1: Create repo
-    const repoRes = await fetch(
-      `https://api.github.com/repos/${intake.templateRepo}/generate`,
+    // 🐙 STEP 1: Create repo (skip if exists)
+    let repo;
+    const existingRepoRes = await fetch(
+      `https://api.github.com/repos/${githubOwner}/${repoName}`,
       {
-        method: "POST",
         headers: {
           Authorization: `Bearer ${githubToken}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-          "X-GitHub-Api-Version": "2022-11-28",
         },
-        body: JSON.stringify({
-          owner: githubOwner,
-          name: repoName,
-          private: true,
-        }),
       }
-    )
+    );
 
-    const repo = await readJsonResponse(repoRes)
+    if (existingRepoRes.ok) {
+      repo = await readJsonResponse(existingRepoRes);
+      console.log("✅ Repo already exists:", repo.html_url);
+    } else {
+      console.log("📦 Creating GitHub repo:", repoName);
+      const repoRes = await fetch(
+        `https://api.github.com/repos/${intake.templateRepo}/generate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          body: JSON.stringify({
+            owner: githubOwner,
+            name: repoName,
+            private: true,
+          }),
+        }
+      );
 
-    if (!repoRes.ok) {
-      console.error("❌ GitHub error:", repo)
-      throw new Error(`GitHub API failed: ${repo.message || repoRes.statusText}`)
+      repo = await readJsonResponse(repoRes);
+
+      if (!repoRes.ok) {
+        console.error("❌ GitHub error:", repo);
+        throw new Error(`GitHub API failed: ${repo.message || repoRes.statusText}`);
+      }
+
+      console.log("✅ Repo created:", repo.html_url);
     }
-
-    console.log("✅ Repo created:", repo.html_url)
 
     // 🚀 STEP 2: Create/import Vercel project
     const project = await deployToVercel(repo)
