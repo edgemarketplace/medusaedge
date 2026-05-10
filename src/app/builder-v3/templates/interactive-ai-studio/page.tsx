@@ -1,10 +1,11 @@
+"use client"
+
 export const dynamic = 'force-dynamic'
 
 import { getDesignTokens } from '@/lib/builder-v3/milano-v3-design-tokens'
 
 export default function TemplatePage() {
   const theme = getDesignTokens('saas-light')
-  
   return (
     <main className="min-h-screen" style={{ backgroundColor: theme?.colors?.background || '#ffffff' }}>
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
@@ -12,15 +13,14 @@ export default function TemplatePage() {
           ← Back to Templates
         </button>
         <span className="text-sm font-bold">Template: Interactive AI Studio</span>
-        <span className="text-sm text-gray-500">Saas Light</span>
+        <span className="text-sm text-gray-500">SaaS Light</span>
       </div>
-
       <div className="max-w-7xl mx-auto px-6 py-12">
         <h1 className="text-5xl font-bold mb-4" style={{ fontFamily: theme?.fonts?.display || 'serif' }}>
           Build AI Workflows Visually
         </h1>
         <p className="text-xl mb-8 max-w-2xl" style={{ fontFamily: theme?.fonts?.grotesk || 'sans-serif' }}>
-          Drag, connect, and deploy intelligent automation pipelines.
+          SUBBuild AI Workflows Visually
         </p>
         <button 
           onClick={() => window.location.href = '/builder-v3/editor?template=interactive-ai-studio'}
