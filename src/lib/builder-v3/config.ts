@@ -160,6 +160,20 @@ export const STREETWEAR_PRESET: TemplatePreset = {
 const presetMap: Record<string, TemplatePreset> = {
   "luxury-fashion": LUXURY_FASHION_PRESET,
   "streetwear": STREETWEAR_PRESET,
+  "streetwear-dark": STREETWEAR_PRESET,
+
+  // Intake/template repo aliases. The launch flow uses marketplace template IDs,
+  // while Builder v3 currently ships a smaller preset set. Keep these aliases so
+  // intake -> puckEditorUrl always opens a working editor instead of a preset-not-found page.
+  "template-clothing-marketplace": LUXURY_FASHION_PRESET,
+  "template-beauty-wellness-marketplace": LUXURY_FASHION_PRESET,
+  "template-home-goods-furniture-marketplace": LUXURY_FASHION_PRESET,
+  "template-diy-maker-marketplace": LUXURY_FASHION_PRESET,
+  "template-medusa-b2b-marketplace": LUXURY_FASHION_PRESET,
+  "template-creator-digital-products-marketplace": LUXURY_FASHION_PRESET,
+  "template-home-services-marketplace": LUXURY_FASHION_PRESET,
+  "template-course-education-marketplace": LUXURY_FASHION_PRESET,
+  "template-fitness-coaching-marketplace": STREETWEAR_PRESET,
 };
 
 export function getPresetByName(name: string): TemplatePreset | undefined {
