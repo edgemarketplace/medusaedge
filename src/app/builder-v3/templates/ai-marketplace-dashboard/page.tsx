@@ -3,31 +3,133 @@
 export const dynamic = 'force-dynamic'
 
 import { getDesignTokens } from '@/lib/builder-v3/milano-v3-design-tokens'
+import { AI_MARKETPLACE_DASHBOARD } from '@/lib/builder-v3/template-registry'
+import { TYPOGRAPHY, SPACING } from '@/lib/builder-v3/milano-v3-design-tokens'
 
 export default function TemplatePage() {
   const theme = getDesignTokens('saas-light')
+  
   return (
     <main className="min-h-screen" style={{ backgroundColor: theme?.colors?.background || '#ffffff' }}>
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <button onClick={() => window.location.href = '/builder-v3'} className="text-sm font-semibold text-blue-600">
+      {/* Header with back button and actions */}
+      <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: theme?.colors?.border || '#e5e7eb' }}>
+        <button 
+          onClick={() => window.location.href = '/builder-v3'} 
+          className="text-sm font-semibold hover:opacity-70 transition"
+          style={{ color: theme?.colors?.text || '#000000' }}
+        >
           ← Back to Templates
         </button>
-        <span className="text-sm font-bold">Template: AI Marketplace Dashboard</span>
-        <span className="text-sm text-gray-500">SaaS Light</span>
-      </div>
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <h1 className="text-5xl font-bold mb-4" style={{ fontFamily: theme?.fonts?.display || 'serif' }}>
-          AI Agent Marketplace
-        </h1>
-        <p className="text-xl mb-8 max-w-2xl" style={{ fontFamily: theme?.fonts?.grotesk || 'sans-serif' }}>
-          SUBAI Agent Marketplace
-        </p>
+        <div className="text-center">
+          <span className="text-sm font-bold" style={{ color: theme?.colors?.text || '#000000' }}>
+            {AI_MARKETPLACE_DASHBOARD.name}
+          </span>
+          <span className="text-sm ml-2" style={{ color: theme?.colors?.textMuted || '#6b7280' }}>
+            {AI_MARKETPLACE_DASHBOARD.theme}
+          </span>
+        </div>
         <button 
-          onClick={() => window.location.href = '/builder-v3/editor?template=ai-marketplace-dashboard'}
-          className="bg-black text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition"
+          onClick={() => window.location.href = `/builder-v3/puck/ai-marketplace-dashboard`}
+          className="px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition"
+          style={{ 
+            backgroundColor: theme?.colors?.primary || '#000000',
+            color: theme?.colors?.background || '#ffffff'
+          }}
         >
           Edit Template
         </button>
+      </div>
+
+      {/* Template Preview Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Hero Section Preview */}
+        <div className="mb-16" style={{ fontFamily: TYPOGRAPHY.fonts.display }}>
+          <h1 
+            className="text-6xl font-bold mb-4 leading-tight"
+            style={{ 
+              fontFamily: TYPOGRAPHY.fonts.display,
+              color: theme?.colors?.text || '#000000',
+              letterSpacing: TYPOGRAPHY.letterSpacing.tight
+            }}
+          >
+            {AI_MARKETPLACE_DASHBOARD.defaultData?.title || 'AI Agent Marketplace'}
+          </h1>
+          <p 
+            className="text-xl mb-8 max-w-2xl"
+            style={{ 
+              fontFamily: TYPOGRAPHY.fonts.grotesk,
+              color: theme?.colors?.textMuted || '#6b7280',
+              letterSpacing: TYPOGRAPHY.letterSpacing.normal
+            }}
+          >
+            {AI_MARKETPLACE_DASHBOARD.defaultData?.subtitle || 'Discover intelligent automation for your workflow'}
+          </p>
+          
+          {/* Mock Agent Grid Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            {[1, 2, 3].map((i) => (
+              <div 
+                key={i}
+                className="rounded-2xl p-6 hover:scale-105 transition"
+                style={{ 
+                  backgroundColor: theme?.colors?.card || '#f9fafb',
+                  border: `1px solid ${theme?.colors?.border || '#e5e7eb'}`
+                }}
+              >
+                <div 
+                  className="w-12 h-12 rounded-xl mb-4"
+                  style={{ backgroundColor: theme?.colors?.primary || '#000000' }}
+                />
+                <h3 
+                  className="font-bold mb-2"
+                  style={{ 
+                    fontFamily: TYPOGRAPHY.fonts.grotesk,
+                    color: theme?.colors?.text || '#000000'
+                  }}
+                >
+                  AI Agent {i}
+                </h3>
+                <p 
+                  className="text-sm"
+                  style={{ 
+                    fontFamily: TYPOGRAPHY.fonts.grotesk,
+                    color: theme?.colors?.textMuted || '#6b7280'
+                  }}
+                >
+                  Automate your workflow with intelligent agents
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Component List */}
+        <div className="mt-12 pt-8 border-t" style={{ borderColor: theme?.colors?.border || '#e5e7eb' }}>
+          <h2 
+            className="text-sm font-semibold mb-4"
+            style={{ 
+              fontFamily: TYPOGRAPHY.fonts.grotesk,
+              color: theme?.colors?.textMuted || '#6b7280'
+            }}
+          >
+            INCLUDED COMPONENTS
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {AI_MARKETPLACE_DASHBOARD.components.map((comp) => (
+              <span 
+                key={comp}
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{ 
+                  backgroundColor: `${theme?.colors?.primary || '#000000'}15`,
+                  color: theme?.colors?.primary || '#000000',
+                  fontFamily: TYPOGRAPHY.fonts.grotesk
+                }}
+              >
+                {comp}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   )

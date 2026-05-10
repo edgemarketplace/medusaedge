@@ -497,7 +497,7 @@ export default function BuilderV2Page() {
     setSelectedTemplate(null)
   }, [])
 
-  /* ── Use This Template → compose + preview ── */
+  /* ── Puck Editor Button ── */
   const handleUseTemplate = useCallback(() => {
     if (!selectedTemplate) return
     try {

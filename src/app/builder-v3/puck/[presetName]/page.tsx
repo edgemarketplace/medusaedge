@@ -72,14 +72,45 @@ export default function BuilderV3PuckPage() {
     try {
       console.log("[Builder v3] Publishing:", publishedData);
       
-      // Save to localStorage for now (replace with Supabase later)
+      // Save to Supabase
+      const supabaseUrl = "https://nzxedlagqtzadyrmgkhq.supabase.co";
+      const supabaseKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6";
+      
       const saveKey = `builder-v3-publish-${presetName}`;
-      localStorage.setItem(saveKey, JSON.stringify(publishedData));
       
-      alert("Builder v3: Published successfully! (Data saved to localStorage)");
+      // Try to save to Supabase marketplace_intakes table
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/marketplace_intakes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            template_name: preset?.name || presetName,
+            template_data: publishedData,
+            status: 'published',
+            created_at: new Date().toISOString()
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("[Builder v3] Saved to Supabase:", result);
+          alert("Published successfully! Your marketplace is being provisioned.");
+        } else {
+          throw new Error('Supabase save failed');
+        }
+      } catch (supabaseError) {
+        console.warn("[Builder v3] Supabase save failed, falling back to localStorage:", supabaseError);
+        localStorage.setItem(saveKey, JSON.stringify(publishedData));
+        alert("Published successfully! (Saved locally - Supabase connection pending)");
+      }
       
-      // Redirect back to builder-v3 home
-      router.push("/builder-v3");
+      // Redirect to the template preview page to see the result
+      router.push(`/builder-v3/templates/${presetName}?published=true`);
     } catch (error) {
       console.error("[Builder v3] Publish failed:", error);
       alert("Publish failed. Check console.");
@@ -124,9 +155,9 @@ export default function BuilderV3PuckPage() {
         alignItems: "center",
         gap: "1rem",
       }}>
-        {/* Back Button */}
+        {/* Back Button - Goes to template preview page */}
         <Link
-          href="/builder-v3"
+          href={`/builder-v3/templates/${presetName}`}
           style={{
             display: "flex",
             alignItems: "center",
@@ -143,7 +174,7 @@ export default function BuilderV3PuckPage() {
           }}
         >
           <ArrowLeft style={{ width: "1rem", height: "1rem" }} />
-          Back to Presets
+          Back to Template
         </Link>
 
         <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#555" }}>

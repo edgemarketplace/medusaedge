@@ -62,7 +62,8 @@ export const AI_MARKETPLACE_DASHBOARD: TemplateDefinition = {
   defaultData: {
     title: "AI Agent Marketplace",
     subtitle: "Discover intelligent automation for your workflow"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 3: SaaS Product Showcase
@@ -78,7 +79,8 @@ export const SAAS_PRODUCT_SHOWCASE: TemplateDefinition = {
   defaultData: {
     heading: "Build Faster. Scale Smarter.",
     subheading: "The modern infrastructure platform for high-growth teams."
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 4: Interactive AI Studio
@@ -94,7 +96,8 @@ export const INTERACTIVE_AI_STUDIO: TemplateDefinition = {
   defaultData: {
     title: "AI Studio",
     subtitle: "Build, test, and deploy AI workflows"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 5: Luxury Product PDP
@@ -111,7 +114,8 @@ export const LUXURY_PRODUCT_PDP: TemplateDefinition = {
     productName: "Premium Leather Jacket",
     price: "$899.00",
     description: "Handcrafted from premium full-grain leather"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 6: Marketplace Collections
@@ -127,7 +131,8 @@ export const MARKETPLACE_COLLECTIONS: TemplateDefinition = {
   defaultData: {
     title: "Collections",
     subtitle: "Discover curated product collections"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 7: Enterprise Landing
@@ -143,7 +148,8 @@ export const ENTERPRISE_LANDING: TemplateDefinition = {
   defaultData: {
     title: "Enterprise Grade Solutions",
     subtitle: "Secure, scalable, and compliant"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 8: Creator / Influencer Commerce
@@ -159,7 +165,8 @@ export const CREATOR_INFLUENCER_COMMERCE: TemplateDefinition = {
   defaultData: {
     creatorName: "Jane Doe",
     tagline: "Style influencer & content creator"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 9: Knowledge / Documentation
@@ -175,7 +182,8 @@ export const KNOWLEDGE_DOCUMENTATION: TemplateDefinition = {
   defaultData: {
     title: "Documentation",
     subtitle: "Everything you need to get started"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE 10: Hyper Modular Universal Homepage
@@ -191,7 +199,8 @@ export const HYPER_MODULAR_UNIVERSAL: TemplateDefinition = {
   defaultData: {
     title: "Welcome to Edge Marketplace",
     subtitle: "Your premier destination for premium products"
-  },
+  }
+}
 
 // ============================================
 // TEMPLATE REGISTRY EXPORT

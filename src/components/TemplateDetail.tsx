@@ -301,14 +301,14 @@ export function TemplateDetail({ template, onUse }: TemplateDetailProps) {
         </div>
       </div>
 
-      {/* ── "Use This Template" button ── */}
+      {/* ── Try Puck Editor Button ── */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onUse}
-        className="w-full rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-slate-900/30 transition-shadow flex items-center justify-center gap-2"
+        className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-violet-900/20 hover:shadow-xl hover:shadow-violet-900/30 transition-shadow flex items-center justify-center gap-2"
       >
-        Use This Template
+        Try Puck Editor
         <ArrowRight className="h-4 w-4" />
       </motion.button>
 
