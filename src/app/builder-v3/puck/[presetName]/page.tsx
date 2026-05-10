@@ -80,8 +80,9 @@ export default function BuilderV3PuckPage() {
       if (!intakeId && !subdomain) {
         const saveKey = `builder-v3-publish-${presetName}`;
         localStorage.setItem(saveKey, JSON.stringify(publishedData));
-        alert("Published locally. Start from the launch flow to publish to a live subdomain.");
-        router.push(`/builder-v3/templates/${presetName}?published=true`);
+        alert("Published locally! To go live with a subdomain, start from the launch flow.");
+        // Redirect to launch flow instead of broken template page
+        router.push(`/launch-your-marketplace`);
         return;
       }
 
