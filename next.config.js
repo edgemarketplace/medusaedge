@@ -34,7 +34,26 @@ const nextConfig = {
   },
 
   async headers() {
-    return []
+    return [
+      {
+        source: "/builder-v2/puck/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
+          },
+        ],
+      },
+      {
+        source: "/builder-v3/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
+          },
+        ],
+      },
+    ];
   },
 }
 
