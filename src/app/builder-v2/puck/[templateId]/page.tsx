@@ -54,27 +54,79 @@ export default function PuckEditorPage() {
     );
   }
 
-  const handlePublish = async (data: any) => {
+  const handlePublish = async (publishedData: any) => {
     try {
-      console.log("[Puck Editor] Publishing data:", data);
-      
-      // Save to localStorage for now (replace with Supabase API call later)
+      console.log("[Puck Editor v2] Publishing:", publishedData);
+
+      // Try to get intakeId and subdomain from URL or localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const intakeId = urlParams.get("intakeId") || localStorage.getItem("currentIntakeId");
+      const subdomain = urlParams.get("subdomain") || templateId;
+
+      // If we have intakeId, publish to Supabase
+      if (intakeId) {
+        const publishResponse = await fetch("/api/sites/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            intakeId,
+            subdomain,
+            puckData: publishedData,
+            themeName,
+            templateId,
+          }),
+        });
+
+        const result = await publishResponse.json().catch(() => null);
+
+        if (!publishResponse.ok || !result?.success) {
+          throw new Error(result?.error || "Publish API failed");
+        }
+
+        alert("Published successfully! Your site is live at: " + result.liveUrl);
+        window.location.href = result.liveUrl || `https://${subdomain}.edgemarketplacehub.com`;
+        return;
+      }
+
+      // Fallback: save to localStorage (old behavior)
       const saveKey = `puck-publish-${templateId}`;
-      localStorage.setItem(saveKey, JSON.stringify(data));
+      localStorage.setItem(saveKey, JSON.stringify(publishedData));
       
-      // Show success message
-      alert("Published successfully! Data saved. Note: Provisioning runner is not active, so site won't go live yet.");
-      
-      // Redirect back to template detail page
+      alert("Published locally. For live site, start from the launch flow at /launch-your-marketplace");
       router.push(`/builder-v2/${templateId}?published=true`);
     } catch (error) {
       console.error("[Puck Editor] Publish failed:", error);
-      alert("Publish failed. Check console for details.");
+      alert("Publish failed: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Deprecation Notice */}
+      <div style={{
+        backgroundColor: "#fef3c7",
+        borderBottom: "1px solid #f59e0b",
+        padding: "0.75rem 1rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+        fontSize: "0.875rem",
+      }}>
+        <span style={{ color: "#92400e" }}>
+          <strong>Notice:</strong> This editor (v2) is deprecated. 
+        </span>
+        <Link 
+          href={`/builder-v3/puck/${templateId}`}
+          style={{
+            color: "#1d4ed8",
+            textDecoration: "underline",
+            fontWeight: 500,
+          }}
+        >
+          Switch to Puck Editor v3 →
+        </Link>
+      </div>
+
       {/* Theme Switcher Header */}
       <div style={{
         padding: "0.5rem 1rem",
