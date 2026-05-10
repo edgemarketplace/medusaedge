@@ -1,0 +1,204 @@
+{
+  "version": "3.0.0",
+  "label": "Milano V3 Component Catalog",
+  "description": "Professional Puck-ready components for Edge Marketplace Hub",
+  "categories": [
+    {
+      "id": "layout",
+      "label": "Layout",
+      "description": "Foundation layout components",
+      "components": [
+        {
+          "id": "SectionWrapper",
+          "label": "Section Wrapper",
+          "description": "Main section container with background/padding options",
+          "fields": {
+            "background": { "type": "text" },
+            "paddingY": { "type": "select", "options": ["none", "sm", "md", "lg", "xl"] }
+          }
+        },
+        {
+          "id": "Grid",
+          "label": "Grid",
+          "description": "12-column adaptive grid with asymmetric layout support",
+          "fields": {
+            "columns": { "type": "number" },
+            "gap": { "type": "text" }
+          }
+        },
+        {
+          "id": "BentoGrid",
+          "label": "Bento Grid",
+          "description": "Asymmetric grid layout inspired by Bento UI",
+          "fields": {
+            "columns": { "type": "select", "options": [2, 3, 4] }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "label": "Hero",
+      "description": "Hero section variants",
+      "components": [
+        {
+          "id": "CinematicHero",
+          "label": "Cinematic Hero",
+          "description": "Full-bleed hero with oversized typography",
+          "fields": {
+            "heading": { "type": "text" },
+            "subheading": { "type": "textarea" },
+            "ctaText": { "type": "text" },
+            "ctaLink": { "type": "text" },
+            "backgroundImage": { "type": "text" },
+            "textAlign": { "type": "select", "options": ["left", "center", "right"] }
+          }
+        },
+        {
+          "id": "SplitHero",
+          "label": "Split Hero",
+          "description": "Asymmetric split layout with image + content",
+          "fields": {
+            "heading": { "type": "text" },
+            "subheading": { "type": "textarea" },
+            "leftImage": { "type": "text" },
+            "layout": { "type": "select", "options": ["left", "right"] }
+          }
+        },
+        {
+          "id": "EditorialHero",
+          "label": "Editorial Hero",
+          "description": "Magazine-style hero with metadata",
+          "fields": {
+            "eyebrow": { "type": "text" },
+            "heading": { "type": "text" },
+            "backgroundImage": { "type": "text" },
+            "author": { "type": "text" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "commerce",
+      "label": "Commerce",
+      "description": "Commerce-native components",
+      "components": [
+        {
+          "id": "ProductCardV3",
+          "label": "Product Card V3",
+          "description": "Luxury PDP style product card with hover effects",
+          "fields": {
+            "title": { "type": "text" },
+            "price": { "type": "text" },
+            "image": { "type": "text" },
+            "onSale": { "type": "radio", "options": [{"label": "Yes", "value": true}, {"label": "No", "value": false}] }
+          }
+        },
+        {
+          "id": "MarketplaceCard",
+          "label": "Marketplace Card",
+          "description": "Grid items for marketplace discovery",
+          "fields": {
+            "title": { "type": "text" },
+            "image": { "type": "text" },
+            "vendor": { "type": "text" },
+            "rating": { "type": "number" }
+          }
+        },
+        {
+          "id": "CollectionCard",
+          "label": "Collection Card",
+          "description": "Category discovery card",
+          "fields": {
+            "title": { "type": "text" },
+            "image": { "type": "text" },
+            "productCount": { "type": "number" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "marketplace",
+      "label": "Marketplace",
+      "description": "AI marketplace & enterprise blocks",
+      "components": [
+        {
+          "id": "AgentGrid",
+          "label": "Agent Grid",
+          "description": "AI marketplace grid with ratings and usage",
+          "fields": {
+            "title": { "type": "text" },
+            "columns": { "type": "select", "options": [2, 3, 4] }
+          }
+        },
+        {
+          "id": "MetricsRibbon",
+          "label": "Metrics Ribbon",
+          "description": "Linear/Vercel inspired metrics display",
+          "fields": {
+            "layout": { "type": "select", "options": ["horizontal", "grid"] }
+          }
+        },
+        {
+          "id": "MarketplaceFeed",
+          "label": "Marketplace Feed",
+          "description": "Dynamic marketplace table/grid",
+          "fields": {
+            "title": { "type": "text" },
+            "layout": { "type": "select", "options": ["grid", "list"] }
+          }
+        }
+      ]
+    },
+    {
+      "id": "typography",
+      "label": "Typography",
+      "description": "Editorial typography components",
+      "components": [
+        {
+          "id": "DisplayHeading",
+          "label": "Display Heading",
+          "description": "Oversized serif heading (Canela/Playfair)",
+          "fields": {
+            "text": { "type": "text" },
+            "size": { "type": "select", "options": ["4xl", "5xl", "6xl", "7xl"] }
+          }
+        },
+        {
+          "id": "EditorialHeading",
+          "label": "Editorial Heading",
+          "description": "Oversized editorial typography with asymmetric grids",
+          "fields": {
+            "text": { "type": "text" },
+            "gridSpan": { "type": "select", "options": ["1", "2", "3", "full"] }
+          }
+        },
+        {
+          "id": "RichText",
+          "label": "Rich Text",
+          "description": "Body content with intelligent whitespace",
+          "fields": {
+            "content": { "type": "textarea" }
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": {
+    "typography": {
+      "displayFont": "Canela, Didot, Playfair Display, Georgia, serif",
+      "uiFont": "Inter, Geist, SF Pro Display, -apple-system, sans-serif"
+    },
+    "radius": {
+      "sm": "8px",
+      "md": "12px",
+      "lg": "16px",
+      "xl": "24px",
+      "2xl": "32px"
+    },
+    "motion": {
+      "duration": "300ms",
+      "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
+    }
+  }
+}
