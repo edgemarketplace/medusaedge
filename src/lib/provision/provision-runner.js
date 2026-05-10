@@ -95,7 +95,7 @@ async function createMarketplaceSite(intake, supabaseKey) {
       "Content-Type": "application/json",
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
-      Prefer: "return=representation",
+      Prefer: "return=representation, resolution=merge-duplicates",
     },
     body: JSON.stringify(sitePayload),
   })

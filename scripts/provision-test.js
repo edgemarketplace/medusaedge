@@ -14,6 +14,7 @@ import { runProvisioning } from '../src/lib/provision/provision-runner.js';
 
 const SUPABASE_URL = 'https://nzxedlagqtzadyrmgkhq.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_JWT = process.env.SUPABASE_JWT || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function fetchIntake(intakeId) {
   const url = intakeId
@@ -22,8 +23,8 @@ async function fetchIntake(intakeId) {
 
   const response = await fetch(url, {
     headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
+      apikey: SUPABASE_JWT,
+      Authorization: `Bearer ${SUPABASE_JWT}`,
     },
   });
 
@@ -52,8 +53,8 @@ async function markProvisioningDone(intakeId, status, error = null) {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
+        apikey: SUPABASE_JWT,
+        Authorization: `Bearer ${SUPABASE_JWT}`,
       },
       body: JSON.stringify(updateData),
     }
