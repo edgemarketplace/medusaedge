@@ -1,4 +1,5 @@
-import { attachMarketplaceDomain, deployToVercel } from "./vercel.js"
+import { attachMarketplaceDomain, deployToVercel } from "./vercel.js";
+import { createSubdomainDNS } from "./cloudflare.js";
 
 const SUPABASE_URL = "https://nzxedlagqtzadyrmgkhq.supabase.co"
 
@@ -173,6 +174,14 @@ export async function runProvisioning(intake) {
 
     // 🌐 STEP 3: Attach wildcard-backed Edge Marketplace subdomain
     const domain = await attachMarketplaceDomain(project, intake.subdomain)
+
+    // 🌊 STEP 3b: Create Cloudflare DNS CNAME record for subdomain
+    try {
+      await createSubdomainDNS(intake.subdomain)
+    } catch (dnsError) {
+      console.error("⚠️ Cloudflare DNS creation failed (non-blocking):", dnsError.message)
+      // Don't fail provisioning if DNS creation fails - can be done manually
+    }
 
     console.log("🌍 Preview domain ready:", domain.previewUrl)
 
