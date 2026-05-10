@@ -60,7 +60,11 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/builder-v3/")) {
     response.headers.set(
       "Content-Security-Policy",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com https://*.vercel.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com https://*.vercel.com https://js.stripe.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://rsms.me; " +
+      "font-src 'self' data: https://fonts.gstatic.com; " +
+      "img-src 'self' data: https:; " +
+      "frame-src 'self' https://js.stripe.com;"
     )
   }
 

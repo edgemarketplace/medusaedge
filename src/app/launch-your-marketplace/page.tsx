@@ -200,8 +200,9 @@ export default function LaunchMarketplacePage() {
   }
 
   if (step === 2) {
+    const subdomain = result?.reservedSubdomain || result?.preferredSubdomain || form.desiredSubdomain || "luxury-fashion"
     const iframeSrc = intakeId 
-      ? `/builder-v3/puck/luxury-fashion?intakeId=${intakeId}&subdomain=${form.desiredSubdomain}`
+      ? `/builder-v3/puck/luxury-fashion?intakeId=${intakeId}&subdomain=${subdomain}`
       : `/builder-v3/puck/luxury-fashion`;
     
     return (
@@ -364,7 +365,7 @@ export default function LaunchMarketplacePage() {
               <p className="mt-4 text-slate-700">Thank you for choosing Edge Marketplace to launch your business website.</p>
               <p className="mt-2 text-slate-700">Continue to your store and check your email for your temporary admin password and Stripe Connect signup.</p>
               <p className="mt-2 font-bold text-blue-700">You are awesome!</p>
-              <a href={result?.previewUrl || "https://mybusiness.edgemarketplacehub.com"} className="mt-6 inline-block rounded-lg bg-blue-600 px-8 py-3 font-bold text-white hover:bg-blue-700">Continue to your store</a>
+              <a href={result?.previewUrl || `https://${(result?.reservedSubdomain || result?.preferredSubdomain || "mybusiness")}.edgemarketplacehub.com`} className="mt-6 inline-block rounded-lg bg-blue-600 px-8 py-3 font-bold text-white hover:bg-blue-700">Continue to your store</a>
               <div className="mt-4 text-sm text-slate-500">Intake ID: {result?.intakeId || "pending"}</div>
             </div>
           )}

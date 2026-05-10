@@ -71,7 +71,7 @@ export function middleware(request: NextRequest) {
     response.headers.set(
       "Content-Security-Policy",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com https://*.vercel.com https://js.stripe.com; " +
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://rsms.me; " +
       "font-src 'self' data: https://fonts.gstatic.com; " +
       "img-src 'self' data: https:; " +
       "frame-src 'self' https://js.stripe.com;"
