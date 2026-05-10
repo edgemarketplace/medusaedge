@@ -141,6 +141,24 @@ export default function BuilderV3PuckPage() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Warning Banner - No Launch Flow Context */}
+      {!intakeId && !subdomain && (
+        <div style={{
+          padding: "0.75rem 1rem",
+          backgroundColor: "#fef3c7",
+          borderBottom: "2px solid #f59e0b",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          fontSize: "0.875rem",
+        }}>
+          <span style={{ color: "#92400e" }}>
+            <strong>Preview Mode:</strong> Publishing will save locally only. 
+            To go live with a subdomain, <a href="/launch-your-marketplace" style={{ color: "#1d4ed8", textDecoration: "underline" }}>start the launch flow</a>.
+          </span>
+        </div>
+      )}
+      
       {/* Header with Back Button + Theme Switcher */}
       <div style={{
         padding: "0.5rem 1rem",
