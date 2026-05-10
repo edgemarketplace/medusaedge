@@ -7,10 +7,12 @@
 
 import React from "react";
 import { getDesignTokens, type ThemeName } from "./milano-v3-design-tokens";
-import { componentRegistry, getComponentsByCategory, getComponentByType } from "./registry";
+import { componentRegistry, getComponentsByCategory } from "./registry";
 import { HeroEditorial } from "./components/hero-variants";
 import { HeroSplit } from "./components/hero-variants";
 import { HeroMinimal } from "./components/hero-variants";
+
+export type { ThemeName } from "./milano-v3-design-tokens";
 
 // Component implementations (add more as they're built)
 const implementations: Record<string, React.ComponentType<any>> = {
@@ -22,7 +24,7 @@ const implementations: Record<string, React.ComponentType<any>> = {
 };
 
 export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
-  const theme = getTheme(themeName);
+  const theme = getDesignTokens(themeName);
   const grouped = getComponentsByCategory();
   
   const components: Record<string, any> = {};
@@ -132,6 +134,10 @@ const presetMap: Record<string, TemplatePreset> = {
 
 export function getPresetByName(name: string): TemplatePreset | undefined {
   return presetMap[name.toLowerCase().trim()];
+}
+
+export function getThemeNames(): ThemeName[] {
+  return ["luxury-fashion", "editorial-minimal", "streetwear-dark", "saas-light", "enterprise-dark"];
 }
 
 export function presetToPuckData(preset: TemplatePreset): any {
