@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic'
 
 import { getDesignTokens } from '@/lib/builder-v3/milano-v3-design-tokens'
 import { AI_MARKETPLACE_DASHBOARD } from '@/lib/builder-v3/template-registry'
-import { TYPOGRAPHY, SPACING } from '@/lib/builder-v3/milano-v3-design-tokens'
 
 export default function TemplatePage() {
   const theme = getDesignTokens('saas-light')
@@ -32,8 +31,8 @@ export default function TemplatePage() {
           onClick={() => window.location.href = `/builder-v3/puck/ai-marketplace-dashboard`}
           className="px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition"
           style={{ 
-            backgroundColor: theme?.colors?.primary || '#000000',
-            color: theme?.colors?.background || '#ffffff'
+            backgroundColor: theme?.colors?.brand || '#635BFF',
+            color: '#ffffff'
           }}
         >
           Edit Template
@@ -43,13 +42,13 @@ export default function TemplatePage() {
       {/* Template Preview Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section Preview */}
-        <div className="mb-16" style={{ fontFamily: TYPOGRAPHY.fonts.display }}>
+        <div className="mb-16">
           <h1 
             className="text-6xl font-bold mb-4 leading-tight"
             style={{ 
-              fontFamily: TYPOGRAPHY.fonts.display,
-              color: theme?.colors?.text || '#000000',
-              letterSpacing: TYPOGRAPHY.letterSpacing.tight
+              fontFamily: theme?.typography?.displayFont || 'serif',
+              color: theme?.colors?.textPrimary || '#111827',
+              letterSpacing: theme?.typography?.letterSpacing?.tight || '0'
             }}
           >
             {AI_MARKETPLACE_DASHBOARD.defaultData?.title || 'AI Agent Marketplace'}
@@ -57,9 +56,9 @@ export default function TemplatePage() {
           <p 
             className="text-xl mb-8 max-w-2xl"
             style={{ 
-              fontFamily: TYPOGRAPHY.fonts.grotesk,
-              color: theme?.colors?.textMuted || '#6b7280',
-              letterSpacing: TYPOGRAPHY.letterSpacing.normal
+              fontFamily: theme?.typography?.uiFont || 'sans-serif',
+              color: theme?.colors?.textSecondary || '#6b7280',
+              letterSpacing: theme?.typography?.letterSpacing?.normal || '0'
             }}
           >
             {AI_MARKETPLACE_DASHBOARD.defaultData?.subtitle || 'Discover intelligent automation for your workflow'}
@@ -72,19 +71,19 @@ export default function TemplatePage() {
                 key={i}
                 className="rounded-2xl p-6 hover:scale-105 transition"
                 style={{ 
-                  backgroundColor: theme?.colors?.card || '#f9fafb',
+                  backgroundColor: theme?.colors?.surface || '#f9fafb',
                   border: `1px solid ${theme?.colors?.border || '#e5e7eb'}`
                 }}
               >
                 <div 
                   className="w-12 h-12 rounded-xl mb-4"
-                  style={{ backgroundColor: theme?.colors?.primary || '#000000' }}
+                  style={{ backgroundColor: theme?.colors?.brand || '#635BFF' }}
                 />
                 <h3 
                   className="font-bold mb-2"
                   style={{ 
-                    fontFamily: TYPOGRAPHY.fonts.grotesk,
-                    color: theme?.colors?.text || '#000000'
+                    fontFamily: theme?.typography?.uiFont || 'sans-serif',
+                    color: theme?.colors?.textPrimary || '#111827'
                   }}
                 >
                   AI Agent {i}
@@ -92,8 +91,8 @@ export default function TemplatePage() {
                 <p 
                   className="text-sm"
                   style={{ 
-                    fontFamily: TYPOGRAPHY.fonts.grotesk,
-                    color: theme?.colors?.textMuted || '#6b7280'
+                    fontFamily: theme?.typography?.uiFont || 'sans-serif',
+                    color: theme?.colors?.textSecondary || '#6b7280'
                   }}
                 >
                   Automate your workflow with intelligent agents
@@ -108,7 +107,7 @@ export default function TemplatePage() {
           <h2 
             className="text-sm font-semibold mb-4"
             style={{ 
-              fontFamily: TYPOGRAPHY.fonts.grotesk,
+              fontFamily: theme?.typography?.uiFont || 'sans-serif',
               color: theme?.colors?.textMuted || '#6b7280'
             }}
           >
@@ -120,9 +119,9 @@ export default function TemplatePage() {
                 key={comp}
                 className="px-3 py-1 rounded-full text-xs font-medium"
                 style={{ 
-                  backgroundColor: `${theme?.colors?.primary || '#000000'}15`,
-                  color: theme?.colors?.primary || '#000000',
-                  fontFamily: TYPOGRAPHY.fonts.grotesk
+                  backgroundColor: `${theme?.colors?.brand || '#635BFF'}15`,
+                  color: theme?.colors?.brand || '#635BFF',
+                  fontFamily: theme?.typography?.uiFont || 'sans-serif'
                 }}
               >
                 {comp}
