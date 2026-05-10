@@ -53,8 +53,55 @@ export interface TemplatePreset {
   composition: Array<{ type: string; variant?: string; props: Record<string, any> }>;
 }
 
+// Preset Definitions
+export const LUXURY_FASHION_PRESET: TemplatePreset = {
+  name: "Luxury Fashion",
+  theme: "luxury-fashion",
+  description: "Editorial-style luxury fashion storefront",
+  composition: [
+    { type: "AnnouncementBar", props: { text: "Free Shipping on Orders $500+" } },
+    { type: "NavigationHeader", props: { logo: "MAISON" } },
+    { type: "HeroEditorial", variant: "cinematic", props: { 
+      headline: "FALL WINTER 2024", 
+      subheadline: "The art of minimal luxury" 
+    }},
+    { type: "ProductGridLuxury", variant: "lookbook-style", props: { 
+      title: "EDITED COLLECTION",
+      collectionId: "luxury-essentials",
+      columns: "3" 
+    }},
+    { type: "StandardFooter", props: {} },
+  ],
+};
+
+export const STREETWEAR_PRESET: TemplatePreset = {
+  name: "Streetwear",
+  theme: "streetwear-dark",
+  description: "Bold, high-contrast streetwear storefront",
+  composition: [
+    { type: "AnnouncementBar", props: { text: "NEW DROP: FRIDAY 3PM" } },
+    { type: "NavigationHeader", props: { logo: "VELOCITY" } },
+    { type: "HeroSplit", variant: "left-image", props: { 
+      headline: "PUSH LIMITS.", 
+      subheadline: "Engineered for maximum output" 
+    }},
+    { type: "ProductGridLuxury", variant: "uniform", props: { 
+      title: "HIGH PERFORMANCE GEAR",
+      collectionId: "new-arrivals",
+      columns: "3" 
+    }},
+    { type: "StandardFooter", props: {} },
+  ],
+};
+
+// Preset lookup
+const presetMap: Record<string, TemplatePreset> = {
+  "luxury-fashion": LUXURY_FASHION_PRESET,
+  "streetwear": STREETWEAR_PRESET,
+};
+
 export function getPresetByName(name: string): TemplatePreset | undefined {
-  return undefined;
+  return presetMap[name.toLowerCase().trim()];
 }
 
 export function presetToPuckData(preset: TemplatePreset): any {
@@ -62,7 +109,11 @@ export function presetToPuckData(preset: TemplatePreset): any {
     root: { props: { theme: preset.theme } },
     content: preset.composition.map((item, idx) => ({
       type: item.type,
-      props: { id: item.type.toLowerCase() + "-" + idx, variant: item.variant, ...item.props }
+      props: { 
+        id: item.type.toLowerCase() + "-" + idx, 
+        variant: item.variant, 
+        ...item.props 
+      },
     })),
     zones: {},
   };
