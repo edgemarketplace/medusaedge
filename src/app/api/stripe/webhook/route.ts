@@ -103,8 +103,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
     console.log(`[Stripe Webhook] Updated intake ${intakeId} payment status to paid`);
 
-    // Trigger provisioning
-    await triggerProvisioning(intakeId);
+    // Trigger provisioning - update status to 'building' so cron job picks it up
+    await fetch(`${SUPABASE_URL}/rest/v1/marketplace_intakes?id=eq.${intakeId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        provisioning_status: "building",
+        updated_at: new Date().toISOString(),
+      }),
+    });
+
+    console.log(`[Stripe Webhook] Provisioning status set to 'building' for intake ${intakeId}`);
+    console.log(`[Stripe Webhook] Cron job will pick this up shortly`);
   } catch (error) {
     console.error("[Stripe Webhook] Error handling checkout completed:", error);
   }
