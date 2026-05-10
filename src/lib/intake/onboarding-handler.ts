@@ -129,6 +129,70 @@ export async function handleTenantOnboarding(req: Request) {
       idempotencyKey,
     })
 
+    // NEW: Create marketplace_sites entry and save inventory
+    try {
+      const supabaseUrl = "https://nzxedlagqtzadyrmgkhq.supabase.co"
+      const supabaseKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6"
+      
+      // Create site entry
+      const siteResponse = await fetch(`${supabaseUrl}/rest/v1/marketplace_sites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          intake_id: tenant.id,
+          subdomain: reservedSubdomain,
+          template_id: selectedTemplateRecord.id,
+          theme_name: selectedTemplateRecord.theme || 'luxury-fashion',
+          status: 'active'
+        })
+      })
+      
+      if (siteResponse.ok) {
+        const siteData = await siteResponse.json()
+        const siteId = siteData?.[0]?.id
+        
+        // Save products to inventory if provided
+        const products = body.products || []
+        if (products.length > 0 && siteId) {
+          const inventoryItems = products.map((p: any) => ({
+            site_id: siteId,
+            title: p.name || p.title || "Untitled Product",
+            description: p.description || "",
+            price: parseFloat(p.price) || 0,
+            sku: p.sku || `SKU-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            inventory_quantity: p.quantity || p.inventory_quantity || 0,
+            images: p.images || [],
+            status: 'active',
+            metadata: {
+              category: p.category || "",
+              sizeColor: p.sizeColor || "",
+              includeInSharedMarketplace: p.includeInSharedMarketplace || false
+            }
+          }))
+          
+          await fetch(`${supabaseUrl}/rest/v1/marketplace_inventory`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify(inventoryItems)
+          })
+          
+          console.log(`[Onboarding] Saved ${inventoryItems.length} products to inventory for site ${siteId}`)
+        }
+      }
+    } catch (inventoryError) {
+      console.error("[Onboarding] Failed to save inventory:", inventoryError)
+      // Don't fail the onboarding if inventory save fails
+    }
+
     const provisioningStatus = "queued"
 
     return NextResponse.json({
