@@ -28,8 +28,12 @@ export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
     
     // CRITICAL: Map entry.schema to fields for Puck's right-side panel
     // This is what enables editing text, subtext, colors, etc.
+    const fields = Object.fromEntries(
+      Object.entries(entry.schema || {}).filter(([fieldName]) => fieldName !== "theme")
+    );
+
     components[entry.type] = {
-      fields: { ...entry.schema }, // Explicitly spread to ensure it's copied correctly
+      fields, // Keep right-side editing panel fields, but omit injected runtime theme object
       render: (props: any) => React.createElement(Component, { ...props, theme }),
       label: entry.label,
       category: entry.category, // Puck uses this for grouping
@@ -38,7 +42,7 @@ export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
     // Debug: Log the fields for this component
     console.log(`[Puck Config] ${entry.type}:`, { 
       label: entry.label, 
-      fields: Object.keys(entry.schema || {}),
+      fields: Object.keys(fields),
       hasImplementation: !!builderV3ComponentImplementations[entry.type] 
     });
   });
