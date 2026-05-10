@@ -35,20 +35,36 @@ export default function BuilderV3PuckPage() {
   const [themeName, setThemeName] = useState<ThemeName>("luxury-fashion");
   const [config, setConfig] = useState<any>(null);
   const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const p = getPresetByName(presetName);
-    if (p) {
+    try {
+      console.log("[Builder v3] Loading preset:", presetName);
+      const p = getPresetByName(presetName);
+      
+      if (!p) {
+        const errMsg = `Preset "${presetName}" not found`;
+        console.error("[Builder v3]", errMsg);
+        setError(errMsg);
+        return;
+      }
+      
+      console.log("[Builder v3] Preset loaded:", p.name);
       setPreset(p);
       setThemeName(p.theme);
       
       // Generate Puck config with theme-aware components
       const puckConfig = getBuilderV3Config(p.theme);
+      console.log("[Builder v3] Config generated for theme:", p.theme);
       setConfig(puckConfig);
       
       // Convert preset to Puck data format
       const puckData = presetToPuckData(p);
+      console.log("[Builder v3] Data converted, content items:", puckData.content.length);
       setData(puckData);
+    } catch (e: any) {
+      console.error("[Builder v3] Error loading preset:", e);
+      setError(e.message || "Unknown error");
     }
   }, [presetName]);
 
@@ -69,6 +85,20 @@ export default function BuilderV3PuckPage() {
       alert("Publish failed. Check console.");
     }
   };
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-slate-600 mb-4">{error}</p>
+          <Link href="/builder-v3" className="text-violet-600 hover:underline">
+            ← Back to Presets
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!preset || !config || !data) {
     return (
