@@ -33,6 +33,16 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/builder-v2/editor/:path*',
+        destination: '/builder-v3/puck/luxury-fashion',
+        permanent: true,
+      },
+    ]
+  },
+
   async headers() {
     return []
   },
