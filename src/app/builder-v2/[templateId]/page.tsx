@@ -114,16 +114,7 @@ export default function TemplateDetailPage() {
               <span className="text-sm font-bold text-slate-900 truncate">{template.name}</span>
             </div>
 
-            {/* Right: Use This Template Button (at TOP as requested) */}
-            <Link
-              href={`/builder-v2/editor/${params.templateId}`}
-              className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-semibold text-sm shadow-sm shadow-emerald-200"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Use This Template
-            </Link>
-            
-            {/* NEW: Puck Editor Button */}
+            {/* Right: Puck Editor Button (only editor option) */}
             <Link
               href={`/builder-v2/puck/${params.templateId}`}
               className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition font-semibold text-sm shadow-sm shadow-violet-200"

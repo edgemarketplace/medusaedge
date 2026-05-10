@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { getPuckConfig, getPuckData, getThemeNames, getTheme } from "@/lib/puck/converter";
 import type { ThemeName, ThemeTokens } from "@/themes/tokens";
 import { emitCSSVariables } from "@/themes/tokens";
@@ -12,6 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export default function PuckEditorPage() {
   const params = useParams<{ templateId: string }>();
+  const router = useRouter();
   const templateId = params.templateId as string;
 
   const [themeName, setThemeName] = useState<ThemeName>("luxury-fashion");
@@ -51,10 +54,23 @@ export default function PuckEditorPage() {
     );
   }
 
-  const handlePublish = (data: any) => {
-    console.log("[Puck Editor] Publishing data:", data);
-    alert("Publish clicked! Check console for data.");
-    // TODO: Save to Supabase or API endpoint
+  const handlePublish = async (data: any) => {
+    try {
+      console.log("[Puck Editor] Publishing data:", data);
+      
+      // Save to localStorage for now (replace with Supabase API call later)
+      const saveKey = `puck-publish-${templateId}`;
+      localStorage.setItem(saveKey, JSON.stringify(data));
+      
+      // Show success message
+      alert("Published successfully! Data saved. Note: Provisioning runner is not active, so site won't go live yet.");
+      
+      // Redirect back to template detail page
+      router.push(`/builder-v2/${templateId}?published=true`);
+    } catch (error) {
+      console.error("[Puck Editor] Publish failed:", error);
+      alert("Publish failed. Check console for details.");
+    }
   };
 
   return (
@@ -68,6 +84,28 @@ export default function PuckEditorPage() {
         alignItems: "center",
         gap: "1rem",
       }}>
+        {/* Back Button */}
+        <Link
+          href={`/builder-v2/${templateId}`}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.25rem",
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            color: "#555",
+            textDecoration: "none",
+            padding: "0.375rem 0.75rem",
+            borderRadius: "0.25rem",
+            border: "1px solid #ccc",
+            backgroundColor: "white",
+            cursor: "pointer",
+          }}
+        >
+          <ArrowLeft style={{ width: "1rem", height: "1rem" }} />
+          Back to Template
+        </Link>
+
         <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#555" }}>
           Theme:
         </span>
