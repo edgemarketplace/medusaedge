@@ -374,12 +374,94 @@ export const streetwearDark: ThemeTokens = {
   },
 }
 
+// ── SaaS Light (Linear/Vercel inspired, glassmorphism accents) ────
+export const saasLight: ThemeTokens = {
+  colors: {
+    primary: '#6d28d9',        // Violet-600 (Linear purple)
+    secondary: '#8b5cf6',      // Violet-500
+    accent: '#a78bfa',         // Violet-400
+    background: '#fafafa',      // Near white (Linear/SaaS background)
+    foreground: '#18181b',     // Zinc-900 (dark text)
+    muted: '#71717a',          // Zinc-500
+    border: '#e4e4e7',         // Zinc-200
+    card: '#ffffff',            // Pure white cards
+    destructive: '#ef4444',    // Red-500
+  },
+  typography: {
+    headingFont: "'Inter', system-ui, -apple-system, sans-serif",
+    bodyFont: "'Inter', system-ui, -apple-system, sans-serif",
+    monoFont: "'JetBrains Mono', 'Fira Code', monospace",
+    h1: 'text-4xl md:text-5xl font-bold tracking-tight',
+    h2: 'text-3xl md:text-4xl font-semibold tracking-tight',
+    h3: 'text-2xl font-semibold',
+    h4: 'text-xl font-semibold',
+    body: 'text-base leading-relaxed',
+    bodySm: 'text-sm leading-relaxed',
+    caption: 'text-xs font-medium uppercase tracking-wider',
+    button: 'text-sm font-medium',
+  },
+  spacing: {
+    sectionY: '3rem',
+    sectionX: '1.25rem',
+    containerMax: '80rem',
+    gridGap: '1.25rem',
+    elementGap: '1rem',
+  },
+  radius: {
+    buttons: '0.375rem',      // rounded-md (Linear style)
+    cards: '0.5rem',          // rounded-lg
+    images: '0.75rem',        // rounded-xl
+    inputs: '0.375rem',       // rounded-md
+  },
+  shadows: {
+    card: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+    elevated: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+    button: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  },
+  buttons: {
+    primary: {
+      background: '#6d28d9',
+      color: '#ffffff',
+      border: '1px solid #6d28d9',
+      borderRadius: '0.375rem',
+      padding: '0.625rem 1.5rem',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      hoverBackground: '#5b21b6',
+      hoverColor: '#ffffff',
+    },
+    secondary: {
+      background: 'transparent',
+      color: '#6d28d9',
+      border: '1px solid #6d28d9',
+      borderRadius: '0.375rem',
+      padding: '0.625rem 1.5rem',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      hoverBackground: 'rgba(109, 40, 217, 0.05)',
+      hoverColor: '#6d28d9',
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#18181b',
+      border: 'none',
+      borderRadius: '0.375rem',
+      padding: '0.625rem 1rem',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      hoverBackground: 'rgba(24, 24, 27, 0.05)',
+      hoverColor: '#18181b',
+    },
+  },
+}
+
 // ─── Theme Registry (for Puck editor) ──────────────────────────────
 
 export const themes: Record<string, ThemeTokens> = {
   'luxury-fashion': luxuryFashion,
   'editorial-minimal': editorialMinimal,
   'streetwear-dark': streetwearDark,
+  'saas-light': saasLight,
 }
 
 export type ThemeName = keyof typeof themes
