@@ -45,6 +45,7 @@ export default function LaunchMarketplacePage() {
     preferredSubdomain?: string
     reservedSubdomain?: string
     selectedTemplateRepo?: string
+    puckEditorUrl?: string  // NEW: Puck editor URL
   } | null>(null)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [approved, setApproved] = useState(false)
@@ -133,6 +134,7 @@ export default function LaunchMarketplacePage() {
         preferredSubdomain: intakeData.preferredSubdomain,
         reservedSubdomain: intakeData.reservedSubdomain,
         selectedTemplateRepo: intakeData.selectedTemplateRepo,
+        puckEditorUrl: intakeData.puckEditorUrl  // NEW: Store Puck editor URL
       })
 
       const stripeResponse = await fetch("/api/stripe/checkout", {
