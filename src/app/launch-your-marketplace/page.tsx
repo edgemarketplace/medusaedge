@@ -165,10 +165,10 @@ export default function LaunchMarketplacePage() {
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <button onClick={() => setStep(1)} className="text-sm font-semibold text-blue-300">← Back</button>
-          <p className="text-sm font-bold">Web Builder (Full Page)</p>
+          <p className="text-sm font-bold">Web Builder (Puck Editor)</p>
           <button onClick={() => setStep(3)} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-bold">Continue →</button>
         </div>
-        <iframe title="Builder" src={`/builder-v2/editor/template-clothing-marketplace`} className="h-[calc(100vh-56px)] w-full" />
+        <iframe title="Puck Editor" src={`/builder-v3/puck/luxury-fashion`} className="h-[calc(100vh-56px)] w-full" />
       </main>
     )
   }
