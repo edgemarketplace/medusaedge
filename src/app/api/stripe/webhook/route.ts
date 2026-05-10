@@ -4,7 +4,7 @@ import Stripe from "stripe";
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const SUPABASE_URL = "https://nzxedlagqtzadyrmgkhq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(req: NextRequest) {
   if (!STRIPE_SECRET_KEY) {
@@ -123,7 +123,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function triggerProvisioning(intakeId: string) {
   try {
-    // Call the provision-runner to start site deployment
+    // Fetch intake data
     const response = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_intakes?id=eq.${intakeId}&select=*`, {
       headers: {
         apikey: SUPABASE_KEY,
@@ -152,15 +152,36 @@ async function triggerProvisioning(intakeId: string) {
       },
       body: JSON.stringify({
         provisioning_status: "building",
+        started_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }),
     });
 
-    console.log(`[Stripe Webhook] Triggered provisioning for intake ${intakeId}`);
+    console.log(`[Stripe Webhook] Provisioning status updated to 'building' for intake ${intakeId}`);
 
-    // In production, this would trigger a background job or serverless function
-    // For now, we'll update the status and let the provision-runner pick it up
+    // TODO: In production, trigger actual provisioning via:
+    // 1. Vercel Cron job that polls for 'building' status
+    // 2. Redis/Upstash queue (QStash, BullMQ)
+    // 3. Supabase Edge Function on database webhook
+    // For now, you can manually run: node scripts/provision-test.js
+    // OR set up a cron endpoint that calls runProvisioning()
+
   } catch (error) {
     console.error("[Stripe Webhook] Error triggering provisioning:", error);
+
+    // Update status to 'failed' on error
+    await fetch(`${SUPABASE_URL}/rest/v1/marketplace_intakes?id=eq.${intakeId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({
+        provisioning_status: "failed",
+        last_error: error instanceof Error ? error.message : String(error),
+        updated_at: new Date().toISOString(),
+      }),
+    });
   }
 }
