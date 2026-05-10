@@ -50,7 +50,44 @@ export default function LaunchMarketplacePage() {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [approved, setApproved] = useState(false)
   const [embeddedClientSecret, setEmbeddedClientSecret] = useState<string | null>(null)
+  const [intakeId, setIntakeId] = useState<string | null>(null)
   const [checkoutInitRequested, setCheckoutInitRequested] = useState(false)
+
+  // Create intake record when transitioning to Step 2 (Web Builder)
+  async function createIntakeAndGoToBuilder() {
+    try {
+      const intakePayload = {
+        ...form,
+        businessName: form.businessName || "New Marketplace",
+        ownerName: form.ownerName || "Owner",
+        email: form.email || "owner@example.com",
+        preferredSubdomain: form.desiredSubdomain || (form.businessName || "newmarket").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20),
+      }
+
+      const intakeResponse = await fetch("/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(intakePayload),
+      })
+      const intakeData = await intakeResponse.json()
+      
+      if (!intakeResponse.ok || !intakeData.success) {
+        throw new Error(intakeData.error || "Failed to create intake")
+      }
+
+      setIntakeId(intakeData.intakeId)
+      setResult({
+        intakeId: intakeData.intakeId,
+        previewUrl: `https://${intakeData.reservedSubdomain || intakeData.preferredSubdomain}.edgemarketplacehub.com`,
+        preferredSubdomain: intakeData.preferredSubdomain,
+        reservedSubdomain: intakeData.reservedSubdomain,
+      })
+      
+      setStep(2)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create intake")
+    }
+  }
 
   const stripePromise = useMemo(() => {
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_KEY
@@ -163,6 +200,10 @@ export default function LaunchMarketplacePage() {
   }
 
   if (step === 2) {
+    const iframeSrc = intakeId 
+      ? `/builder-v3/puck/luxury-fashion?intakeId=${intakeId}&subdomain=${form.desiredSubdomain}`
+      : `/builder-v3/puck/luxury-fashion`;
+    
     return (
       <main className="min-h-screen bg-slate-950 text-white">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
@@ -170,7 +211,7 @@ export default function LaunchMarketplacePage() {
           <p className="text-sm font-bold">Web Builder (Puck Editor)</p>
           <button onClick={() => setStep(3)} className="rounded bg-blue-600 px-3 py-1.5 text-sm font-bold">Continue →</button>
         </div>
-        <iframe title="Puck Editor" src={`/builder-v3/puck/luxury-fashion`} className="h-[calc(100vh-56px)] w-full" />
+        <iframe title="Puck Editor" src={iframeSrc} className="h-[calc(100vh-56px)] w-full" />
       </main>
     )
   }
@@ -217,7 +258,7 @@ export default function LaunchMarketplacePage() {
                 <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4"><input type="checkbox" checked={form.needsToPurchaseDomain} onChange={(e) => update("needsToPurchaseDomain", e.target.checked)} className="h-5 w-5" /><span className="text-sm font-semibold">Need to purchase a domain (included in confirmation email)</span></label>
               </div>
               {form.customDomain && <Field label="Custom Domain" value={form.customDomainName} onChange={(v) => update("customDomainName", v)} placeholder="mybusiness.com" />}
-                <div className="flex justify-end"><button onClick={() => setStep(2)} className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button></div>
+                <div className="flex justify-end"><button onClick={createIntakeAndGoToBuilder} className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button></div>
             </div>
           )}
 
