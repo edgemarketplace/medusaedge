@@ -92,22 +92,24 @@ export async function handleTenantOnboarding(req: Request) {
     if (existing?.id) {
       const existingSubdomain = existing.subdomain || requestedSubdomain
       const provisioningStatus = existing.provisioning_status || "queued"
-      return NextResponse.json({
-        success: true,
-        idempotentReplay: true,
-        intakeId: existing.id,
-        tenantId: existing.id,
-        idempotencyKey,
-        selectedTemplate: selectedTemplateRecord.id,
-        selectedTemplateRepo: selectedTemplateRepo,
-        preferredSubdomain: existingSubdomain,
-        reservedSubdomain: existingSubdomain,
-        subdomain: existingSubdomain,
-        previewUrl: `https://${existingSubdomain}.edgemarketplacehub.com`,
-        dashboardUrl: `/dashboard?businessName=${encodeURIComponent(String(body.businessName))}&brandColor=${encodeURIComponent(String(body.brandColor || body.brandColors || "#2563eb"))}`,
-        status: "intake_received",
-        provisioningStatus,
-      })
+    return NextResponse.json({
+      success: true,
+      idempotentReplay: true,
+      intakeId: existing.id,
+      tenantId: existing.id,
+      idempotencyKey,
+      selectedTemplate: selectedTemplateRecord.id,
+      selectedTemplateRepo: selectedTemplateRepo,
+      preferredSubdomain: existingSubdomain,
+      reservedSubdomain: existingSubdomain,
+      subdomain: existingSubdomain,
+      previewUrl: `https://${existingSubdomain}.edgemarketplacehub.com`,
+      // NEW: Puck Editor URL for immediate editing
+      puckEditorUrl: `/builder-v3/puck/${selectedTemplateRecord.id}?intakeId=${existing.id}&subdomain=${existingSubdomain}`,
+      dashboardUrl: `/dashboard?businessName=${encodeURIComponent(String(body.businessName))}&brandColor=${encodeURIComponent(String(body.brandColor || body.brandColors || "#2563eb"))}`,
+      status: "intake_received",
+      provisioningStatus,
+    })
     }
 
     const reservedSubdomain = await reserveAvailableSubdomain(requestedSubdomain)
@@ -141,6 +143,8 @@ export async function handleTenantOnboarding(req: Request) {
       reservedSubdomain: tenant.subdomain,
       subdomain: tenant.subdomain,
       previewUrl: `https://${tenant.subdomain}.edgemarketplacehub.com`,
+      // NEW: Puck Editor URL for immediate editing
+      puckEditorUrl: `/builder-v3/puck/${selectedTemplateRecord.id}?intakeId=${tenant.id}&subdomain=${tenant.subdomain}`,
       dashboardUrl: `/dashboard?businessName=${encodeURIComponent(
         tenant.businessName
       )}&brandColor=${encodeURIComponent(tenant.brandColor)}`,

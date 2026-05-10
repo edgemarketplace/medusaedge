@@ -29,7 +29,12 @@ export const dynamic = 'force-dynamic';
 export default function BuilderV3PuckPage() {
   const params = useParams<{ presetName: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const presetName = params.presetName as string;
+  
+  // NEW: Get intakeId and subdomain from URL params
+  const intakeId = searchParams.get('intakeId');
+  const subdomain = searchParams.get('subdomain');
   
   const [preset, setPreset] = useState<TemplatePreset | undefined>();
   const [themeName, setThemeName] = useState<ThemeName>("luxury-fashion");
@@ -72,45 +77,96 @@ export default function BuilderV3PuckPage() {
     try {
       console.log("[Builder v3] Publishing:", publishedData);
       
-      // Save to Supabase
       const supabaseUrl = "https://nzxedlagqtzadyrmgkhq.supabase.co";
       const supabaseKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6";
       
-      const saveKey = `builder-v3-publish-${presetName}`;
-      
-      // Try to save to Supabase marketplace_intakes table
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/marketplace_intakes`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({
-            template_name: preset?.name || presetName,
-            template_data: publishedData,
-            status: 'published',
-            created_at: new Date().toISOString()
-          })
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log("[Builder v3] Saved to Supabase:", result);
-          alert("Published successfully! Your marketplace is being provisioned.");
-        } else {
-          throw new Error('Supabase save failed');
+      // If we have an intakeId, save to marketplace_sites table
+      if (intakeId) {
+        try {
+          // First, check if a site already exists for this intake
+          const checkResponse = await fetch(
+            `${supabaseUrl}/rest/v1/marketplace_sites?intake_id=eq.${intakeId}`,
+            {
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+              }
+            }
+          );
+          
+          const existingSites = await checkResponse.json();
+          
+          if (existingSites && existingSites.length > 0) {
+            // Update existing site
+            const updateResponse = await fetch(
+              `${supabaseUrl}/rest/v1/marketplace_sites?id=eq.${existingSites[0].id}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
+                  puck_data: publishedData,
+                  updated_at: new Date().toISOString()
+                })
+            );
+            
+            if (updateResponse.ok) {
+              console.log("[Builder v3] Site updated:", await updateResponse.json());
+              alert("Published successfully! Your marketplace is live.");
+            }
+          } else {
+            // Create new site
+            const createResponse = await fetch(
+              `${supabaseUrl}/rest/v1/marketplace_sites`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
+                  intake_id: parseInt(intakeId),
+                  subdomain: subdomain || `site-${intakeId}`,
+                  puck_data: publishedData,
+                  theme_name: preset?.theme || 'luxury-fashion',
+                  template_id: presetName,
+                  status: 'active'
+                })
+              }
+            );
+            
+            if (createResponse.ok) {
+              const newSite = await createResponse.json();
+              console.log("[Builder v3] Site created:", newSite);
+              alert("Published successfully! Your marketplace is being deployed.");
+            } else {
+              throw new Error('Failed to create site');
+            }
+          }
+        } catch (supabaseError) {
+          console.error("[Builder v3] Supabase error:", supabaseError);
+          alert("Publish failed. Check console.");
+          return;
         }
-      } catch (supabaseError) {
-        console.warn("[Builder v3] Supabase save failed, falling back to localStorage:", supabaseError);
+      } else {
+        // Fallback to localStorage if no intakeId
+        const saveKey = `builder-v3-publish-${presetName}`;
         localStorage.setItem(saveKey, JSON.stringify(publishedData));
-        alert("Published successfully! (Saved locally - Supabase connection pending)");
+        alert("Published successfully! (Saved locally - no intake ID found)");
       }
       
-      // Redirect to the template preview page to see the result
-      router.push(`/builder-v3/templates/${presetName}?published=true`);
+      // Redirect to the live site or template preview
+      if (subdomain) {
+        window.location.href = `https://${subdomain}.edgemarketplacehub.com`;
+      } else {
+        router.push(`/builder-v3/templates/${presetName}?published=true`);
+      }
     } catch (error) {
       console.error("[Builder v3] Publish failed:", error);
       alert("Publish failed. Check console.");
