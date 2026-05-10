@@ -12,8 +12,8 @@ const templates = [
     description: "AI-powered marketplace with dashboard interface",
   },
   {
-    slug: "luxury-pdp",
-    name: "Luxury PDP",
+    slug: "luxury-fashion",
+    name: "Luxury Fashion",
     description: "Premium product detail page for luxury items",
   },
   {

@@ -58,6 +58,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectUrl, request.url))
   }
 
+  // Redirect old template slugs to new ones
+  if (pathname === "/builder-v3/templates/luxury-pdp") {
+    return NextResponse.redirect(new URL("/builder-v3/templates/luxury-fashion", request.url))
+  }
+
   // Puck editor routes need eval/inline style allowances for the editor UI.
   if (
     pathname.startsWith("/builder-v2/puck/") ||
