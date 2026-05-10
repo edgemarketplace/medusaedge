@@ -112,6 +112,7 @@ export default function BuilderV3PuckPage() {
                   puck_data: publishedData,
                   updated_at: new Date().toISOString()
                 })
+              }
             );
             
             if (updateResponse.ok) {
