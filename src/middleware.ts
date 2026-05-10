@@ -50,6 +50,14 @@ export function middleware(request: NextRequest) {
     response = NextResponse.next()
   }
 
+  // Redirect old builder-v2 routes to builder-v3
+  if (pathname.startsWith("/builder-v2")) {
+    const newPath = pathname.replace("/builder-v2", "/builder-v3/puck");
+    // Handle /builder-v2 -> /builder-v3/puck/luxury-fashion
+    const redirectUrl = newPath === "/builder-v3/puck" ? "/builder-v3/puck/luxury-fashion" : newPath;
+    return NextResponse.redirect(new URL(redirectUrl, request.url))
+  }
+
   // Puck editor routes need eval/inline style allowances for the editor UI.
   if (
     pathname.startsWith("/builder-v2/puck/") ||
