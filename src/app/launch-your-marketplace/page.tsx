@@ -106,9 +106,34 @@ export default function LaunchMarketplacePage() {
   useEffect(() => {
     if (paidFlagChecked || typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
-    if (params.get("paid") === "1") setStep(5)
+    if (params.get("paid") === "1") {
+      // Restore result from sessionStorage if available (prevents "Intake ID: pending")
+      const savedResult = sessionStorage.getItem('checkout_result')
+      if (savedResult) {
+        try {
+          const parsedResult = JSON.parse(savedResult)
+          setResult(parsedResult)
+          setIntakeId(parsedResult.intakeId)
+          // Clear after restoring to avoid stale data
+          sessionStorage.removeItem('checkout_result')
+        } catch (e) {
+          console.error('Failed to parse saved checkout result', e)
+        }
+      }
+      setStep(5)
+    }
     setPaidFlagChecked(true)
   }, [paidFlagChecked])
+
+  // Save result to sessionStorage whenever it changes (for post-checkout restoration)
+  useEffect(() => {
+    if (typeof window === "undefined" || !result) return
+    try {
+      sessionStorage.setItem('checkout_result', JSON.stringify(result))
+    } catch (e) {
+      console.error('Failed to save result to sessionStorage', e)
+    }
+  }, [result])
 
   useEffect(() => {
     if (step !== 5) return
