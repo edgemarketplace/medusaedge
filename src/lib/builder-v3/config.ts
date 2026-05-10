@@ -6,32 +6,25 @@
  */
 
 import React from "react";
-import { getDesignTokens, type ThemeName } from "./milano-v3-design-tokens";
+import { type ThemeName } from "./milano-v3-design-tokens";
 import { componentRegistry, getComponentsByCategory } from "./registry";
-import { HeroEditorial } from "./components/hero-variants";
-import { HeroSplit } from "./components/hero-variants";
-import { HeroMinimal } from "./components/hero-variants";
+import {
+  builderV3ComponentImplementations,
+  createBuilderV3Placeholder,
+  getRuntimeThemeTokens,
+} from "./runtime-renderer";
 
 export type { ThemeName } from "./milano-v3-design-tokens";
 
-// Component implementations (add more as they're built)
-const implementations: Record<string, React.ComponentType<any>> = {
-  HeroEditorial,
-  HeroSplit,
-  HeroMinimal,
-  // TODO: Add other component implementations as they're built
-  // ProductGridLuxury, FeaturedProduct, etc.
-};
-
 export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
-  const theme = getDesignTokens(themeName);
+  const theme = getRuntimeThemeTokens(themeName);
   const grouped = getComponentsByCategory();
   
   const components: Record<string, any> = {};
   
   componentRegistry.forEach((entry: any) => {
     // Get the component implementation, or use placeholder
-    const Component = implementations[entry.type] || createPlaceholder(entry);
+    const Component = builderV3ComponentImplementations[entry.type] || createBuilderV3Placeholder(entry);
     
     // CRITICAL: Map entry.schema to fields for Puck's right-side panel
     // This is what enables editing text, subtext, colors, etc.
@@ -46,7 +39,7 @@ export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
     console.log(`[Puck Config] ${entry.type}:`, { 
       label: entry.label, 
       fields: Object.keys(entry.schema || {}),
-      hasImplementation: !!implementations[entry.type] 
+      hasImplementation: !!builderV3ComponentImplementations[entry.type] 
     });
   });
   
