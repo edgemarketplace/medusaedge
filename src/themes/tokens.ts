@@ -384,4 +384,8 @@ export const themes: Record<string, ThemeTokens> = {
 
 export type ThemeName = keyof typeof themes
 
+export function getTheme(name: ThemeName): ThemeTokens {
+  return themes[name] || themes[defaultTheme];
+}
+
 export const defaultTheme: ThemeName = 'luxury-fashion'
