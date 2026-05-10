@@ -28,9 +28,7 @@ export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
     
     // CRITICAL: Map entry.schema to fields for Puck's right-side panel
     // This is what enables editing text, subtext, colors, etc.
-    const fields = Object.fromEntries(
-      Object.entries(entry.schema || {}).filter(([fieldName]) => fieldName !== "theme")
-    );
+    const fields = normalizePuckFields(entry.schema || {});
 
     components[entry.type] = {
       fields, // Keep right-side editing panel fields, but omit injected runtime theme object
@@ -54,6 +52,41 @@ export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
     // Enable the fields panel (right side)
     enableFields: true,
   };
+}
+
+function normalizePuckFields(schema: Record<string, any>) {
+  return Object.fromEntries(
+    Object.entries(schema)
+      .filter(([fieldName]) => fieldName !== "theme")
+      .map(([fieldName, fieldConfig]) => {
+        const config = { ...(fieldConfig || {}) };
+
+        // @puckeditor/core v0.21 does not provide a built-in "image" field.
+        // Use text URL fields until we add a custom media picker.
+        if (config.type === "image") {
+          return [
+            fieldName,
+            {
+              ...config,
+              type: "text",
+              label: config.label || `${fieldName} URL`,
+            },
+          ];
+        }
+
+        if (config.arrayFields) {
+          return [
+            fieldName,
+            {
+              ...config,
+              arrayFields: normalizePuckFields(config.arrayFields),
+            },
+          ];
+        }
+
+        return [fieldName, config];
+      })
+  );
 }
 
 function createPlaceholder(entry: any) {
