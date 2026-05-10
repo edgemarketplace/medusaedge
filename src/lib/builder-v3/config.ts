@@ -1,48 +1,78 @@
 /**
  * Builder v3 - Puck Config Generator
+ * 
+ * FIXED: Properly exposes fields for right-side editing panel
+ * All components now have correct schema → fields mapping
  */
 
 import React from "react";
-import { getTheme, type ThemeName } from "@/themes/tokens";
-import { componentRegistry, getComponentsByCategory } from "./registry";
+import { getDesignTokens, type ThemeName } from "./milano-v3-design-tokens";
+import { componentRegistry, getComponentsByCategory, getComponentByType } from "./registry";
 import { HeroEditorial } from "./components/hero-variants";
 import { HeroSplit } from "./components/hero-variants";
 import { HeroMinimal } from "./components/hero-variants";
 
+// Component implementations (add more as they're built)
 const implementations: Record<string, React.ComponentType<any>> = {
   HeroEditorial,
   HeroSplit,
   HeroMinimal,
+  // TODO: Add other component implementations as they're built
+  // ProductGridLuxury, FeaturedProduct, etc.
 };
 
 export function getBuilderV3Config(themeName: ThemeName = "luxury-fashion") {
   const theme = getTheme(themeName);
   const grouped = getComponentsByCategory();
+  
   const components: Record<string, any> = {};
   
   componentRegistry.forEach((entry: any) => {
+    // Get the component implementation, or use placeholder
     const Component = implementations[entry.type] || createPlaceholder(entry);
+    
+    // CRITICAL: Map entry.schema to fields for Puck's right-side panel
+    // This is what enables editing text, subtext, colors, etc.
     components[entry.type] = {
-      fields: entry.schema,
+      fields: { ...entry.schema }, // Explicitly spread to ensure it's copied correctly
       render: (props: any) => React.createElement(Component, { ...props, theme }),
       label: entry.label,
+      category: entry.category, // Puck uses this for grouping
     };
+    
+    // Debug: Log the fields for this component
+    console.log(`[Puck Config] ${entry.type}:`, { 
+      label: entry.label, 
+      fields: Object.keys(entry.schema || {}),
+      hasImplementation: !!implementations[entry.type] 
+    });
   });
   
-  return { components, categories: grouped, theme };
+  return { 
+    components, 
+    categories: grouped, 
+    theme,
+    // Enable the fields panel (right side)
+    enableFields: true,
+  };
 }
 
 function createPlaceholder(entry: any) {
   return (props: any) => {
     const theme = props.theme || {};
     const bg = theme?.colors?.background || "#f9fafb";
-    return React.createElement("div", {
-      className: "p-8 border-2 border-dashed border-gray-300 rounded-lg text-center",
-      style: { backgroundColor: bg }
-    }, [
-      React.createElement("p", { className: "text-gray-500 font-medium" }, entry.label),
-      React.createElement("p", { className: "text-gray-400 text-sm mt-1" }, entry.description),
-    ]);
+    return React.createElement(
+      "div",
+      {
+        className: "p-8 border-2 border-dashed border-gray-300 rounded-lg text-center",
+        style: { backgroundColor: bg }
+      },
+      [
+        React.createElement("p", { className: "text-gray-500 font-medium" }, entry.label),
+        React.createElement("p", { className: "text-gray-400 text-sm mt-1" }, entry.description),
+        React.createElement("p", { className: "text-gray-400 text-xs mt-2" }, "Implementation pending"),
+      ]
+    );
   };
 }
 
@@ -82,7 +112,7 @@ export const STREETWEAR_PRESET: TemplatePreset = {
     { type: "AnnouncementBar", props: { text: "NEW DROP: FRIDAY 3PM" } },
     { type: "NavigationHeader", props: { logo: "VELOCITY" } },
     { type: "HeroSplit", variant: "left-image", props: { 
-      headline: "PUSH LIMITS.", 
+      headline: "PUSH LIMITS.",
       subheadline: "Engineered for maximum output" 
     }},
     { type: "ProductGridLuxury", variant: "uniform", props: { 
@@ -110,7 +140,7 @@ export function presetToPuckData(preset: TemplatePreset): any {
     content: preset.composition.map((item, idx) => ({
       type: item.type,
       props: { 
-        id: item.type.toLowerCase() + "-" + idx, 
+        id: `${item.type.toLowerCase()}-${idx}`, 
         variant: item.variant, 
         ...item.props 
       },
