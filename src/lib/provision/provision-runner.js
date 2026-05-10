@@ -1,5 +1,7 @@
 import { attachMarketplaceDomain, deployToVercel } from "./vercel.js"
 
+const SUPABASE_URL = "https://nzxedlagqtzadyrmgkhq.supabase.co"
+
 function getRequiredEnv(name) {
   const value = process.env[name]
 
@@ -24,11 +26,97 @@ async function readJsonResponse(response) {
   }
 }
 
+async function createMarketplaceSite(intake, supabaseKey) {
+  const defaultPuckData = {
+    content: [
+      {
+        type: "announcement-bar",
+        props: {
+          id: "announcement-bar-default",
+          text: `Welcome to ${intake.businessName || "our marketplace"}`,
+          backgroundColor: "#000000",
+          textColor: "#ffffff",
+        },
+      },
+      {
+        type: "navigation-header",
+        props: {
+          id: "nav-header-default",
+          logoText: intake.businessName || "Marketplace",
+          links: [
+            { label: "Shop", href: "#" },
+            { label: "About", href: "#" },
+          ],
+        },
+      },
+      {
+        type: "hero-editorial",
+        props: {
+          id: "hero-default",
+          headline: intake.businessName || "Welcome",
+          subheadline: "Your marketplace is ready. Edit in Puck to customize.",
+          ctaText: "Shop Now",
+          ctaLink: "#",
+        },
+      },
+      {
+        type: "standard-footer",
+        props: {
+          id: "footer-default",
+          companyName: intake.businessName || "Marketplace",
+          description: "Powered by Edge Marketplace Hub",
+        },
+      },
+    ],
+    root: {
+      props: {
+        theme: intake.themeName || "luxury-fashion",
+      },
+    },
+  }
+
+  const now = new Date().toISOString()
+  const sitePayload = {
+    intake_id: intake.id,
+    subdomain: intake.subdomain,
+    business_name: intake.businessName || null,
+    puck_data: defaultPuckData,
+    theme_name: intake.themeName || "luxury-fashion",
+    template_id: intake.templateRepo || null,
+    status: "active",
+    created_at: now,
+    updated_at: now,
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_sites`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(sitePayload),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    console.error("❌ Failed to create marketplace_sites record:", error)
+    // Don't throw - provisioning infrastructure is still valid
+    return null
+  }
+
+  const result = await response.json()
+  console.log("✅ Marketplace site record created:", result[0]?.id)
+  return result[0]
+}
+
 export async function runProvisioning(intake) {
   console.log("🚀 Starting provisioning for:", intake.businessName)
 
   const githubToken = getRequiredEnv("GITHUB_TOKEN")
   const githubOwner = getRequiredEnv("GITHUB_OWNER")
+  const supabaseKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY")
   const repoName = `marketplace-${intake.subdomain}`
 
   console.log("📦 Creating GitHub repo:", repoName)
@@ -37,6 +125,7 @@ export async function runProvisioning(intake) {
   try {
     // 🐙 STEP 1: Create repo (skip if exists)
     let repo;
+
     const existingRepoRes = await fetch(
       `https://api.github.com/repos/${githubOwner}/${repoName}`,
       {
@@ -87,11 +176,16 @@ export async function runProvisioning(intake) {
 
     console.log("🌍 Preview domain ready:", domain.previewUrl)
 
+    // 🎨 STEP 4: Create marketplace_sites record with default content
+    const siteRecord = await createMarketplaceSite(intake, supabaseKey)
+
     return {
       repo,
       project,
       domain,
+      siteRecord,
       previewUrl: domain.previewUrl,
+      liveUrl: `https://${intake.subdomain}.edgemarketplacehub.com`,
       status: "preview_live",
     }
   } catch (err) {

@@ -217,7 +217,7 @@ export default function LaunchMarketplacePage() {
                 <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-4"><input type="checkbox" checked={form.needsToPurchaseDomain} onChange={(e) => update("needsToPurchaseDomain", e.target.checked)} className="h-5 w-5" /><span className="text-sm font-semibold">Need to purchase a domain (included in confirmation email)</span></label>
               </div>
               {form.customDomain && <Field label="Custom Domain" value={form.customDomainName} onChange={(v) => update("customDomainName", v)} placeholder="mybusiness.com" />}
-              <div className="flex justify-end"><Link href="/builder-v2"><button className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button></Link></div>
+                <div className="flex justify-end"><Link href="/builder-v3/puck/luxury-fashion"><button className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700">Continue to Builder →</button></Link></div>
             </div>
           )}
 
