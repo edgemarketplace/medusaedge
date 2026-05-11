@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'packages': path.resolve(__dirname, 'packages'),
+    };
+    return config;
+  },
   images: {
     remotePatterns: [
       {

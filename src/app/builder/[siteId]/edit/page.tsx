@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { createEdgePuckConfig } from "../../../../packages/edge-templates/config-factory";
-import { publishValidationPlugin } from "../../../../packages/edge-templates/plugins/publishValidationPlugin";
-import { loadPageRecord, updatePageStatus, updateDeploymentStatus } from "../../../../packages/edge-templates/supabase-service";
+import { createEdgePuckConfig } from "packages/edge-templates/config-factory";
+import { publishValidationPlugin } from "packages/edge-templates/plugins/publishValidationPlugin";
+import { loadPageRecord, updatePageStatus, updateDeploymentStatus } from "packages/edge-templates/supabase-service";
 
 export const dynamic = "force-dynamic";
 

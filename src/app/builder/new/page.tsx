@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generatePageFromOnboarding, OnboardingAnswers } from "../../../packages/edge-templates/onboarding-generator";
-import { savePageRecord, createDeployment } from "../../../packages/edge-templates/supabase-service";
+import { generatePageFromOnboarding, OnboardingAnswers } from "packages/edge-templates/onboarding-generator";
+import { savePageRecord, createDeployment } from "packages/edge-templates/supabase-service";
 
 export default function NewBuilderOnboarding() {
   const router = useRouter();
