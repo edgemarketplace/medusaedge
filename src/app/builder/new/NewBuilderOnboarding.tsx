@@ -90,42 +90,19 @@ export default function NewBuilderOnboarding() {
       const siteId = `site-${Date.now()}`;
       const slug = "home";
 
-      const saveResponse = await fetch("/api/site-pages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          site_id: siteId,
-          slug: slug,
-          puck_data: generatedPage,
-          status: "draft",
-        }),
-      });
+      // Save directly to localStorage (no API needed for now)
+      const draft = {
+        siteId,
+        slug,
+        puck_data: generatedPage,
+        status: "draft",
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem(`draft-${siteId}`, JSON.stringify(draft));
+      console.log("Saved to localStorage:", draft);
 
-      if (saveResponse.ok) {
-        await fetch("/api/deployments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            site_id: siteId,
-            status: "draft",
-            checkout_mode: answers.checkoutMode || "native",
-          }),
-        });
-      }
-
-      if (!saveResponse.ok) {
-        const draft = {
-          siteId,
-          slug,
-          puck_data: generatedPage,
-          status: "draft",
-          created_at: new Date().toISOString(),
-        };
-        localStorage.setItem(`draft-${siteId}`, JSON.stringify(draft));
-        console.warn("Saved to localStorage fallback - API unavailable");
-      }
-
-      router.push(`/builder/${siteId}/edit`);
+      // Redirect to editor
+      window.location.href = `/builder/${siteId}/edit`;
     } catch (error) {
       console.error("Onboarding failed:", error);
       alert("Failed to create site. Check console.");
