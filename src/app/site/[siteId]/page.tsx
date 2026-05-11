@@ -13,7 +13,7 @@ export default async function SitePage({ params }: SitePageProps) {
   const publishableKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6"
 
   const res = await fetch(
-    `${supabaseUrl}/marketplace_intakes?site_id=eq.${siteId}&published=eq.true&select=*`,
+    `${supabaseUrl}/marketplace_intakes?site_id=eq.${siteId}&select=*`,
     {
       headers: {
         "apikey": publishableKey,
