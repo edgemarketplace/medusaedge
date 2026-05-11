@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edge Marketplace Hub - Create Store</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    input, select, button { width: 100%; padding: 10px; margin: 10px 0; }
+    button { background: #2563eb; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Create Your Store</h1>
+  <form id="storeForm">
+    <label>Store Name *</label>
+    <input type="text" name="siteName" required placeholder="My Awesome Store">
+    
+    <label>Tagline</label>
+    <input type="text" name="siteTagline" placeholder="Quality products for everyone">
+    
+    <label>Currency</label>
+    <select name="currency">
+      <option value="USD">USD ($)</option>
+      <option value="EUR">EUR (€)</option>
+      <option value="GBP">GBP (£)</option>
+    </select>
+    
+    <button type="submit">Create My Store →</button>
+  </form>
+  
+  <script>
+    document.getElementById('storeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+      
+      // Save to localStorage
+      const siteId = 'site-' + Date.now();
+      localStorage.setItem('pendingStore', JSON.stringify({siteId, data}));
+      
+      // Redirect to a simple confirmation
+      alert('Store creation started! Site ID: ' + siteId);
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>
