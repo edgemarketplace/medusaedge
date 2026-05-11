@@ -2,7 +2,75 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generatePageFromOnboarding, OnboardingAnswers } from "packages/edge-templates/onboarding-generator";
+
+// Inlined types and function to avoid import issues
+type CheckoutMode = "native" | "stripe-link" | "payment-link" | "quote-only";
+
+type OnboardingAnswers = {
+  siteName: string;
+  siteTagline?: string;
+  logoUrl?: string;
+  currency?: string;
+  checkoutMode?: CheckoutMode;
+  supportEmail?: string;
+};
+
+// Inlined generatePageFromOnboarding function with hardcoded defaults
+function generatePageFromOnboarding(answers: OnboardingAnswers) {
+  // Default root props (from retailCoreManifest)
+  const defaultRootProps = {
+    checkoutMode: "native" as CheckoutMode,
+    currency: "USD",
+    locale: "en-US",
+    primaryCtaLabel: "Shop now",
+  };
+
+  const rootProps = {
+    siteName: answers.siteName,
+    siteTagline: answers.siteTagline,
+    businessType: "retail",
+    templateFamily: "retail-core",
+    stylePreset: "modern-commerce",
+    colorScheme: "blue",
+    typographyPreset: "balanced",
+    logoUrl: answers.logoUrl,
+    primaryCtaLabel: "Shop now",
+    primaryCtaHref: "/shop",
+    checkoutMode: answers.checkoutMode || defaultRootProps.checkoutMode,
+    currency: answers.currency || defaultRootProps.currency,
+    locale: defaultRootProps.locale,
+    supportEmail: answers.supportEmail,
+    seoTitle: `${answers.siteName} - Online Store`,
+    seoDescription: answers.siteTagline || `Shop at ${answers.siteName} for the best products.`,
+  };
+
+  // Recommended stack sections
+  const recommendedStack = [
+    "PromoHeader",
+    "CommerceHeader",
+    "ProductHero",
+    "FeaturedCollection",
+    "ReviewStrip",
+    "FAQ",
+    "CommerceFooter",
+  ];
+
+  const starterContent = recommendedStack.map((sectionType, i) => ({
+    type: sectionType,
+    props: {
+      id: `${sectionType.toLowerCase()}-${i}`,
+      ...(sectionType === "ProductHero" && {
+        headline: `Welcome to ${answers.siteName}`,
+        subheadline: answers.siteTagline || "Discover our latest collection",
+      }),
+    },
+  }));
+
+  return {
+    root: { props: rootProps },
+    content: starterContent,
+  };
+}
 
 export default function NewBuilderOnboarding() {
   const router = useRouter();
@@ -21,7 +89,7 @@ export default function NewBuilderOnboarding() {
     setLoading(true);
 
     try {
-      // 1. Generate page from onboarding
+      // 1. Generate page from onboarding (now inlined, no import issues)
       const generatedPage = generatePageFromOnboarding(answers);
       const siteId = `site-${Date.now()}`;
       const slug = "home"; // Always use "home" for the main page
