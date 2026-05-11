@@ -71,6 +71,11 @@ export function middleware(request: NextRequest) {
       "img-src 'self' data: https:; " +
       "frame-src 'self' https://js.stripe.com https://*.edgemarketplacehub.com;"
     )
+
+    // Prevent Cloudflare/Vercel/browser caching on builder routes
+    response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
+    response.headers.set("Pragma", "no-cache")
+    response.headers.set("Expires", "0")
   }
 
   return response
