@@ -8,12 +8,12 @@ interface SitePageProps {
 export default async function SitePage({ params }: SitePageProps) {
   const siteId = params.siteId
 
-  // Fetch site record from Supabase
+  // Fetch site record from Supabase (site_pages table)
   const supabaseUrl = "https://nzxedlagqtzadyrmgkhq.supabase.co/rest/v1"
   const publishableKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6"
 
   const res = await fetch(
-    `${supabaseUrl}/marketplace_intakes?site_id=eq.${siteId}&select=*`,
+    `${supabaseUrl}/site_pages?site_id=eq.${siteId}&select=*`,
     {
       headers: {
         "apikey": publishableKey,
@@ -29,24 +29,28 @@ export default async function SitePage({ params }: SitePageProps) {
     notFound()
   }
 
-  const sites = await res.json()
-  if (!sites || sites.length === 0) {
+  const pages = await res.json()
+  if (!pages || pages.length === 0) {
     notFound()
   }
 
-  const site = sites[0]
+  const page = pages[0]
+  const siteData = page.puck_data || {}
 
   return (
     <div style={{ maxWidth: 800, margin: "40px auto", padding: "20px", fontFamily: "system-ui" }}>
-      <h1>{site.store_name || "Marketplace Site"}</h1>
-      <p>Template: {site.selected_template || "retail-core"}</p>
+      <h1>{siteData.root?.props?.siteName || "Marketplace Site"}</h1>
+      <p>Site ID: {siteId}</p>
       
-      {site.template_data ? (
-        <pre style={{ background: "#f5f5f5", padding: "16px", borderRadius: "8px", overflow: "auto" }}>
-          {JSON.stringify(site.template_data, null, 2)}
-        </pre>
+      {siteData.content ? (
+        <div style={{ marginTop: "24px" }}>
+          <h2>Page Content</h2>
+          <pre style={{ background: "#f5f5f5", padding: "16px", borderRadius: "8px", overflow: "auto" }}>
+            {JSON.stringify(siteData, null, 2)}
+          </pre>
+        </div>
       ) : (
-        <p>No template data yet. Publish from the builder to see the full site.</p>
+        <p>No content yet. Edit in the builder to add sections.</p>
       )}
 
       <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
