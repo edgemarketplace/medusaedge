@@ -1,3 +1,4 @@
+import React from "react";
 import { TemplateFamily, BusinessType } from "../edge-theme/types";
 import { EdgeRootProps } from "../edge-theme/types";
 import retailCoreManifest from "./retailCoreManifest";

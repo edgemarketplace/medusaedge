@@ -6,7 +6,6 @@ import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { createEdgePuckConfig } from "packages/edge-templates/config-factory";
 import { publishValidationPlugin } from "packages/edge-templates/plugins/publishValidationPlugin";
-import { loadPageRecord, updatePageStatus, updateDeploymentStatus } from "packages/edge-templates/supabase-service";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +16,7 @@ export default function BuilderEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Load draft on mount (Supabase first, then localStorage fallback)
+  // Load draft on mount (API route first, then localStorage fallback)
   useEffect(() => {
     const siteId = params.siteId;
     if (!siteId) return;
@@ -25,17 +24,20 @@ export default function BuilderEditorPage() {
     const loadDraft = async () => {
       let draft = null;
 
-      // 1. Try Supabase first (primary)
+      // 1. Try API route first (loads from Supabase server-side)
       try {
-        draft = await loadPageRecord(siteId);
-        if (draft) {
-          console.log("Loaded from Supabase");
-          setPuckData(draft.puck_data);
-          setLoading(false);
-          return;
+        const response = await fetch(`/api/site-pages?site_id=${siteId}&slug=home`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.puck_data) {
+            console.log("Loaded from Supabase via API");
+            setPuckData(data.puck_data);
+            setLoading(false);
+            return;
+          }
         }
       } catch (error) {
-        console.warn("Supabase load failed, trying localStorage:", error);
+        console.warn("API load failed, trying localStorage:", error);
       }
 
       // 2. Fallback to localStorage
@@ -60,54 +62,49 @@ export default function BuilderEditorPage() {
     loadDraft();
   }, [params.siteId]);
 
-  // Handle publish (updates Supabase + deployment status)
+  // Handle publish (updates via API routes)
   const handlePublish = async (data: any) => {
     setSaving(true);
     try {
       const siteId = params.siteId;
 
-      // 1. Update page status to published in Supabase
-      await updatePageStatus(siteId, "published");
+      // 1. Update page status to published via API
+      await fetch("/api/site-pages", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          site_id: siteId,
+          status: "published",
+          puck_data: data,
+        }),
+      });
 
-      // 2. Update deployment status
-      await updateDeploymentStatus(siteId, "published");
+      // 2. Update deployment status via API
+      await fetch("/api/deployments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          site_id: siteId,
+          status: "published",
+          last_published_at: new Date().toISOString(),
+        }),
+      });
 
-      // 3. Save published data to Supabase
+      // 3. Also save to localStorage as backup
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co"}/rest/v1/site_pages?site_id=eq.${siteId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-            "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
-          },
-          body: JSON.stringify({
-            puck_data: data,
-            updated_at: new Date().toISOString(),
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save published data");
-        }
-      } catch (error) {
-        console.warn("Supabase save failed, using localStorage fallback:", error);
-        // Fallback to localStorage
         const existing = localStorage.getItem(`draft-${siteId}`);
         const draft = existing ? JSON.parse(existing) : {};
         draft.puck_data = data;
         draft.status = "published";
         draft.updated_at = new Date().toISOString();
         localStorage.setItem(`draft-${siteId}`, JSON.stringify(draft));
+      } catch (e) {
+        // Ignore localStorage errors
       }
 
       // 4. Show success
       alert("Published successfully!");
       console.log("Publish data:", data);
-
-      // 5. Redirect to live site (when deployed)
-      // const slug = siteId.replace("site-", "").toLowerCase();
-      // router.push(`https://${slug}.edgemarketplacehub.com`);
     } catch (error) {
       console.error("Publish failed:", error);
       alert("Publish failed. Check console.");

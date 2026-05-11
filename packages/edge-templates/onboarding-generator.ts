@@ -45,7 +45,7 @@ export function generatePageFromOnboarding(answers: OnboardingAnswers) {
   }));
 
   return {
-    root: rootProps,
+    root: { props: rootProps },
     content: starterContent,
   };
 }

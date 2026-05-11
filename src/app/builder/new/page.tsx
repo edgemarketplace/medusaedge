@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { generatePageFromOnboarding, OnboardingAnswers } from "packages/edge-templates/onboarding-generator";
-import { savePageRecord, createDeployment } from "packages/edge-templates/supabase-service";
 
 export default function NewBuilderOnboarding() {
   const router = useRouter();
@@ -27,21 +26,33 @@ export default function NewBuilderOnboarding() {
       const siteId = `site-${Date.now()}`;
       const slug = answers.siteName.toLowerCase().replace(/\s+/g, "-");
 
-      // 2. Save to Supabase (primary)
-      const pageRecord = await savePageRecord({
-        site_id: siteId,
-        slug: slug,
-        puck_data: generatedPage,
-        status: "draft",
+      // 2. Save to Supabase via API route (server-side)
+      const saveResponse = await fetch("/api/site-pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          site_id: siteId,
+          slug: slug,
+          puck_data: generatedPage,
+          status: "draft",
+        }),
       });
 
-      // 3. Create deployment record
-      if (pageRecord?.id) {
-        await createDeployment(siteId, answers.checkoutMode || "native");
+      // 3. Create deployment record via API route
+      if (saveResponse.ok) {
+        await fetch("/api/deployments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            site_id: siteId,
+            status: "draft",
+            checkout_mode: answers.checkoutMode || "native",
+          }),
+        });
       }
 
-      // 4. Fallback: save to localStorage if Supabase fails
-      if (!pageRecord) {
+      // 4. Fallback: save to localStorage if API fails
+      if (!saveResponse.ok) {
         const draft = {
           siteId,
           slug,
@@ -50,7 +61,7 @@ export default function NewBuilderOnboarding() {
           created_at: new Date().toISOString(),
         };
         localStorage.setItem(`draft-${siteId}`, JSON.stringify(draft));
-        console.warn("Saved to localStorage fallback - Supabase unavailable");
+        console.warn("Saved to localStorage fallback - API unavailable");
       }
 
       // 5. Redirect to editor
@@ -91,7 +102,7 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
-          {/* Tagline */}
+          {/* Rest of form fields same as before... */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tagline
@@ -105,7 +116,6 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
-          {/* Logo URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Logo URL
@@ -119,7 +129,6 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
-          {/* Currency */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Currency
@@ -135,7 +144,6 @@ export default function NewBuilderOnboarding() {
             </select>
           </div>
 
-          {/* Checkout Mode */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Checkout Mode
@@ -152,7 +160,6 @@ export default function NewBuilderOnboarding() {
             </select>
           </div>
 
-          {/* Support Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Support Email
@@ -166,7 +173,6 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading || !answers.siteName}

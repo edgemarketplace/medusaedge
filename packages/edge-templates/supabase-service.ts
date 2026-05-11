@@ -1,5 +1,9 @@
-const SUPABASE_URL = "https://nzxedlagqtzadyrmgkhq.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_service_role_key_here"; // Set in Vercel env
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+if (!SUPABASE_KEY) {
+  console.warn("SUPABASE_SERVICE_ROLE_KEY not set in environment");
+}
 
 export type SitePageRecord = {
   id?: string;
@@ -30,6 +34,11 @@ export type DeploymentRecord = {
 };
 
 export async function savePageRecord(page: SitePageRecord): Promise<SitePageRecord | null> {
+  if (!SUPABASE_KEY) {
+    console.error("Cannot save to Supabase: SUPABASE_SERVICE_ROLE_KEY not set");
+    return null;
+  }
+
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages`, {
       method: "POST",
@@ -48,7 +57,8 @@ export async function savePageRecord(page: SitePageRecord): Promise<SitePageReco
     });
 
     if (!response.ok) {
-      console.error("Failed to save page to Supabase:", await response.text());
+      const errorText = await response.text();
+      console.error("Failed to save page to Supabase:", response.status, errorText);
       return null;
     }
     const data = await response.json();
@@ -60,6 +70,11 @@ export async function savePageRecord(page: SitePageRecord): Promise<SitePageReco
 }
 
 export async function loadPageRecord(siteId: string, slug: string = "home"): Promise<SitePageRecord | null> {
+  if (!SUPABASE_KEY) {
+    console.error("Cannot load from Supabase: SUPABASE_SERVICE_ROLE_KEY not set");
+    return null;
+  }
+
   try {
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/site_pages?site_id=eq.${siteId}&slug=eq.${slug}&limit=1`,
@@ -72,7 +87,8 @@ export async function loadPageRecord(siteId: string, slug: string = "home"): Pro
     );
 
     if (!response.ok) {
-      console.error("Failed to load page from Supabase:", await response.text());
+      const errorText = await response.text();
+      console.error("Failed to load page from Supabase:", response.status, errorText);
       return null;
     }
     const data = await response.json();
@@ -84,6 +100,8 @@ export async function loadPageRecord(siteId: string, slug: string = "home"): Pro
 }
 
 export async function updatePageStatus(siteId: string, status: string): Promise<void> {
+  if (!SUPABASE_KEY) return;
+
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/site_pages?site_id=eq.${siteId}`, {
       method: "PATCH",
@@ -103,6 +121,8 @@ export async function updatePageStatus(siteId: string, status: string): Promise<
 }
 
 export async function createDeployment(siteId: string, checkoutMode: string): Promise<DeploymentRecord | null> {
+  if (!SUPABASE_KEY) return null;
+
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/deployments`, {
       method: "POST",
@@ -135,6 +155,8 @@ export async function updateDeploymentStatus(
   siteId: string,
   status: string
 ): Promise<void> {
+  if (!SUPABASE_KEY) return;
+
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/deployments?site_id=eq.${siteId}`, {
       method: "PATCH",
