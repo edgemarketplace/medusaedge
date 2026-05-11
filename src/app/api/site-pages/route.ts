@@ -1,49 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const siteId = searchParams.get("site_id");
-  const slug = searchParams.get("slug") || "home";
-
-  if (!siteId) {
-    return NextResponse.json({ error: "site_id required" }, { status: 400 });
-  }
-
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
-    const response = await fetch(
-      `${supabaseUrl}/rest/v1/site_pages?site_id=eq.${siteId}&slug=eq.${slug}&limit=1`,
-      {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Supabase load error:", response.status, errorText);
-      return NextResponse.json({ error: "Failed to load page", details: errorText }, { status: response.status });
-    }
-
-    const data = await response.json();
-    if (data.length === 0) {
-      return NextResponse.json({ error: "Not found", site_id: siteId, slug }, { status: 404 });
-    }
-    return NextResponse.json(data[0]);
-  } catch (error: any) {
-    console.error("API error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { site_id, slug, puck_data, status } = body;
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages`, {
       method: "POST",
@@ -53,53 +14,60 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${SUPABASE_KEY}`,
         Prefer: "return=representation",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        site_id,
+        slug: slug || "home",
+        puck_data,
+        status: status || "draft",
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Supabase save error:", response.status, errorText);
-      return NextResponse.json({ error: "Failed to save page" }, { status: response.status });
+      const error = await response.json();
+      console.error("Supabase site_pages POST error:", error);
+      return new Response(JSON.stringify({ error: "Failed to save site page" }), {
+        status: 500,
+      });
     }
 
     const data = await response.json();
-    return NextResponse.json(data[0]);
-  } catch (error: any) {
-    console.error("API error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify(data), { status: 200 });
+  } catch (error) {
+    console.error("site-pages POST error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+    });
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const body = await request.json();
-    const { site_id, slug, ...updateData } = body;
+    const url = new URL(request.url);
+    const site_id = url.searchParams.get("site_id");
+    const slug = url.searchParams.get("slug") || "home";
 
-    if (!site_id) {
-      return NextResponse.json({ error: "site_id required" }, { status: 400 });
-    }
+    let fetchUrl = `${SUPABASE_URL}/rest/v1/site_pages?slug=eq.${slug}`;
+    if (site_id) fetchUrl += `&site_id=eq.${site_id}`;
 
-    const filter = slug ? `site_id=eq.${site_id}&slug=eq.${slug}` : `site_id=eq.${site_id}`;
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?${filter}`, {
-      method: "PATCH",
+    const response = await fetch(fetchUrl, {
       headers: {
-        "Content-Type": "application/json",
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
       },
-      body: JSON.stringify(updateData),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Supabase update error:", response.status, errorText);
-      return NextResponse.json({ error: "Failed to update page" }, { status: response.status });
+      return new Response(JSON.stringify({ error: "Failed to fetch site page" }), {
+        status: 500,
+      });
     }
 
     const data = await response.json();
-    return NextResponse.json(data[0] || { success: true });
-  } catch (error: any) {
-    console.error("API error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify(data[0] || null), { status: 200 });
+  } catch (error) {
+    console.error("site-pages GET error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+    });
   }
 }

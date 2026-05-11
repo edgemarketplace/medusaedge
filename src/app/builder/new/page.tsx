@@ -155,7 +155,7 @@ export default function NewBuilderOnboarding() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-6">
+        <form className="bg-white rounded-xl shadow-sm p-8 space-y-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }}>
           {/* Site Name */}
           <div>
             <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -259,7 +259,8 @@ export default function NewBuilderOnboarding() {
           </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSubmit({ preventDefault: () => {} } as any)}
             disabled={loading || !answers.siteName}
             className="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
