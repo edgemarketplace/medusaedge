@@ -35,5 +35,27 @@ export async function GET() {
     });
   }
 
+  // Test 2: Check if deployments table exists
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/deployments?limit=1`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+    results.tests.push({
+      name: "deployments table access",
+      status: response.ok ? "OK" : "FAIL",
+      httpStatus: response.status,
+      error: response.ok ? null : await response.text(),
+    });
+  } catch (error: any) {
+    results.tests.push({
+      name: "deployments table access",
+      status: "ERROR",
+      error: error.message,
+    });
+  }
+
   return NextResponse.json(results);
 }
