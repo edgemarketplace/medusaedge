@@ -23,29 +23,34 @@ export async function POST(request: NextRequest) {
       content: []
     };
 
-    // Save to Supabase (server-side, can use service role key)
+    // Save to Supabase marketplace_intakes table (server-side, uses service role key)
     const SUPABASE_URL = process.env.SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/site_pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Prefer": "return=representation",
-        },
-        body: JSON.stringify({
-          site_id: siteId,
-          slug: "home",
-          puck_data: pageData,
-          status: "draft",
-        }),
-      });
-    } catch (dbError) {
-      console.error("DB save failed:", dbError);
-      // Continue anyway - we'll use localStorage fallback
+    
+    if (SUPABASE_KEY) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/marketplace_intakes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Prefer": "return=representation",
+          },
+          body: JSON.stringify({
+            site_id: siteId,
+            store_name: siteName,
+            selected_template: "retail-core",
+            template_data: pageData,
+            published: false,
+          }),
+        });
+        console.log("Saved to marketplace_intakes:", siteId);
+      } catch (dbError) {
+        console.error("DB save failed:", dbError);
+      }
+    } else {
+      console.warn("SUPABASE_SERVICE_ROLE_KEY not set, skipping DB save");
     }
 
     // Redirect to editor
