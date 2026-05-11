@@ -1,24 +1,22 @@
 import { ThemeTokens } from "../types";
 
-const modernCommerce: ThemeTokens = {
+export const modernCommerce: ThemeTokens = {
   colors: {
     bg: "#ffffff",
-    surface: "#f8f9fa",
-    text: "#1a1a1a",
-    muted: "#6c757d",
-    primary: "#0d6efd",
+    surface: "#f9fafb",
+    text: "#111827",
+    muted: "#6b7280",
+    primary: "#2563eb",
     primaryContrast: "#ffffff",
-    accent: "#198754",
-    border: "#dee2e6",
+    accent: "#f59e0b",
+    border: "#e5e7eb",
   },
   typography: {
     headingFont: "Inter, system-ui, sans-serif",
     bodyFont: "Inter, system-ui, sans-serif",
     scale: "balanced",
   },
-  radius: "soft",
+  radius: "rounded",
   shadow: "subtle",
   spacing: "normal",
 };
-
-export default modernCommerce;
