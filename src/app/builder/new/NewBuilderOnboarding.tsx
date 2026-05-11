@@ -123,7 +123,7 @@ export default function NewBuilderOnboarding() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-6">
+        <form method="POST" action="/api/create-store" className="bg-white rounded-xl shadow-sm p-8 space-y-6">
           <div>
             <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
               Store Name *
