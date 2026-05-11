@@ -89,10 +89,12 @@ export default function NewBuilderOnboarding() {
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-6">
           {/* Site Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
               Store Name *
             </label>
             <input
+              id="siteName"
+              name="siteName"
               type="text"
               required
               value={answers.siteName}
@@ -102,12 +104,14 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
-          {/* Rest of form fields same as before... */}
+          {/* Tagline */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="siteTagline" className="block text-sm font-medium text-gray-700 mb-1">
               Tagline
             </label>
             <input
+              id="siteTagline"
+              name="siteTagline"
               type="text"
               value={answers.siteTagline}
               onChange={(e) => setAnswers({ ...answers, siteTagline: e.target.value })}
@@ -116,11 +120,14 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
+          {/* Logo URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700 mb-1">
               Logo URL
             </label>
             <input
+              id="logoUrl"
+              name="logoUrl"
               type="url"
               value={answers.logoUrl}
               onChange={(e) => setAnswers({ ...answers, logoUrl: e.target.value })}
@@ -129,11 +136,14 @@ export default function NewBuilderOnboarding() {
             />
           </div>
 
+          {/* Currency */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
               Currency
             </label>
             <select
+              id="currency"
+              name="currency"
               value={answers.currency}
               onChange={(e) => setAnswers({ ...answers, currency: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -144,11 +154,14 @@ export default function NewBuilderOnboarding() {
             </select>
           </div>
 
+          {/* Checkout Mode */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="checkoutMode" className="block text-sm font-medium text-gray-700 mb-1">
               Checkout Mode
             </label>
             <select
+              id="checkoutMode"
+              name="checkoutMode"
               value={answers.checkoutMode}
               onChange={(e) => setAnswers({ ...answers, checkoutMode: e.target.value as any })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -160,11 +173,14 @@ export default function NewBuilderOnboarding() {
             </select>
           </div>
 
+          {/* Support Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="supportEmail" className="block text-sm font-medium text-gray-700 mb-1">
               Support Email
             </label>
             <input
+              id="supportEmail"
+              name="supportEmail"
               type="email"
               value={answers.supportEmail}
               onChange={(e) => setAnswers({ ...answers, supportEmail: e.target.value })}

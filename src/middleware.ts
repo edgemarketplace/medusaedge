@@ -64,7 +64,9 @@ export function middleware(request: NextRequest) {
   }
 
   // Puck editor routes need eval/inline style allowances for the editor UI.
+  // Cover ALL builder routes: /builder/new, /builder/[siteId]/edit, /builder-v3/, /builder-v2/puck/
   if (
+    pathname.startsWith("/builder/") ||
     pathname.startsWith("/builder-v2/puck/") ||
     pathname.startsWith("/builder-v3/")
   ) {

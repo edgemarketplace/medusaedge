@@ -57,7 +57,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Puck editor routes need eval/inline style allowances for the editor UI.
-  if (pathname.startsWith("/builder-v3/")) {
+  // Cover ALL builder routes: /builder/new, /builder/[siteId]/edit, /builder-v3/, /builder-v2/puck/
+  if (
+    pathname.startsWith("/builder/") ||
+    pathname.startsWith("/builder-v2/puck/") ||
+    pathname.startsWith("/builder-v3/")
+  ) {
     response.headers.set(
       "Content-Security-Policy",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com https://*.vercel.com https://js.stripe.com; " +
