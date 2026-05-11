@@ -1,33 +1,62 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Render } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { createEdgePuckConfig } from "packages/edge-templates/config-factory";
 
-export const dynamic = "force-dynamic";
-
-async function getSiteData(siteId: string) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : "https://www.edgemarketplacehub.com";
-  
-  const res = await fetch(`${baseUrl}/api/site-pages?site_id=${siteId}&slug=home`, {
-    cache: "no-store",
-  });
-  
-  if (!res.ok) return null;
-  return res.json();
-}
-
-export default async function StorefrontPage({ 
+export default function StorefrontPage({ 
   params 
 }: { 
   params: { siteId: string } 
 }) {
-  const siteData = await getSiteData(params.siteId);
-  
+  const [siteData, setSiteData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const baseUrl = window.location.origin;
+        const res = await fetch(`${baseUrl}/api/site-pages?site_id=${params.siteId}&slug=home`);
+        
+        if (!res.ok) {
+          router.push("/404");
+          return;
+        }
+        
+        const data = await res.json();
+        setSiteData(data);
+      } catch (error) {
+        console.error("Failed to load site:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, [params.siteId]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-lg">Loading store...</div>
+      </div>
+    );
+  }
+
   if (!siteData || !siteData.puck_data) {
-    notFound();
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Store not found</h1>
+          <a href="/builder/new" className="text-blue-600 hover:underline">
+            Create a store
+          </a>
+        </div>
+      </div>
+    );
   }
 
   const { root, content } = siteData.puck_data;
