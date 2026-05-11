@@ -1,4 +1,4 @@
-import { EdgeRootProps } from "../../packages/edge-theme/types";
+import { EdgeRootProps } from "packages/edge-theme/types";
 import retailCoreManifest from "./retailCoreManifest";
 
 export type OnboardingAnswers = {
