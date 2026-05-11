@@ -76,7 +76,55 @@ async function createMarketplaceSite(intake, supabaseKey) {
     },
   }
 
-  const now = new Date().toISOString()
+  // Check if record already exists (upsert logic for unique constraint)
+  const checkResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/marketplace_sites?subdomain=eq.${intake.subdomain}&select=id`,
+    {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+    }
+  );
+  
+  const existingRecords = await checkResponse.json();
+  const now = new Date().toISOString();
+  
+  if (existingRecords.length > 0) {
+    // Update existing record
+    const siteId = existingRecords[0].id;
+    const updateResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_sites?id=eq.${siteId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({
+          puck_data: defaultPuckData,
+          theme_name: intake.themeName || "luxury-fashion",
+          template_id: intake.templateRepo || null,
+          status: "active",
+          updated_at: now,
+        }),
+      }
+    );
+    
+    if (!updateResponse.ok) {
+      const error = await updateResponse.text();
+      console.error("❌ Failed to update marketplace_sites record:", error);
+      return null;
+    }
+    
+    const result = await updateResponse.json();
+    console.log("✅ Marketplace site record updated:", result[0]?.id);
+    return result[0];
+  }
+  
+  // Create new record
   const sitePayload = {
     intake_id: intake.id,
     subdomain: intake.subdomain,
@@ -87,7 +135,7 @@ async function createMarketplaceSite(intake, supabaseKey) {
     status: "active",
     created_at: now,
     updated_at: now,
-  }
+  };
 
   const response = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_sites`, {
     method: "POST",
@@ -95,21 +143,21 @@ async function createMarketplaceSite(intake, supabaseKey) {
       "Content-Type": "application/json",
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
-      Prefer: "return=representation, resolution=merge-duplicates",
+      Prefer: "return=representation",
     },
     body: JSON.stringify(sitePayload),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    console.error("❌ Failed to create marketplace_sites record:", error)
+    const error = await response.text();
+    console.error("❌ Failed to create marketplace_sites record:", error);
     // Don't throw - provisioning infrastructure is still valid
-    return null
+    return null;
   }
 
-  const result = await response.json()
-  console.log("✅ Marketplace site record created:", result[0]?.id)
-  return result[0]
+  const result = await response.json();
+  console.log("✅ Marketplace site record created:", result[0]?.id);
+  return result[0];
 }
 
 export async function runProvisioning(intake) {

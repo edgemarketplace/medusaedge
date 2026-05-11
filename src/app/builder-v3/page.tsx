@@ -49,6 +49,36 @@ export default function BuilderV3Page() {
         </div>
       </div>
 
+      {/* NEW: Vertical Builder Banner */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center text-white text-xl">
+                🚀
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm sm:text-base">
+                  NEW: Vertical Template OS
+                </h3>
+                <p className="text-blue-100 text-xs sm:text-sm mt-0.5">
+                  Retail Core • 8 pre-configured sections • 15-min setup
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/builder/new"
+              className="shrink-0 bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-50 transition flex items-center gap-2"
+            >
+              Try Vertical Builder
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Architecture Info */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-violet-50 border border-violet-200 rounded-xl p-6 mb-8">
