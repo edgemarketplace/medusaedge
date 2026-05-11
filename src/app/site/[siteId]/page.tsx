@@ -8,12 +8,12 @@ interface SitePageProps {
 export default async function SitePage({ params }: SitePageProps) {
   const siteId = params.siteId
 
-  // Fetch site record from Supabase (site_pages table)
+  // Fetch site record from Supabase (marketplace_intakes table)
   const supabaseUrl = "https://nzxedlagqtzadyrmgkhq.supabase.co/rest/v1"
   const publishableKey = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6"
 
   const res = await fetch(
-    `${supabaseUrl}/site_pages?site_id=eq.${siteId}&select=*`,
+    `${supabaseUrl}/marketplace_intakes?site_id=eq.${siteId}&select=*`,
     {
       headers: {
         "apikey": publishableKey,
@@ -29,20 +29,21 @@ export default async function SitePage({ params }: SitePageProps) {
     notFound()
   }
 
-  const pages = await res.json()
-  if (!pages || pages.length === 0) {
+  const sites = await res.json()
+  if (!sites || sites.length === 0) {
     notFound()
   }
 
-  const page = pages[0]
-  const siteData = page.puck_data || {}
+  const site = sites[0]
+  const siteData = site.template_data || site
 
   return (
     <div style={{ maxWidth: 800, margin: "40px auto", padding: "20px", fontFamily: "system-ui" }}>
-      <h1>{siteData.root?.props?.siteName || "Marketplace Site"}</h1>
+      <h1>{site.store_name || siteData.root?.props?.siteName || "Marketplace Site"}</h1>
       <p>Site ID: {siteId}</p>
+      {site.selected_template && <p>Template: {site.selected_template}</p>}
       
-      {siteData.content ? (
+      {siteData.content || siteData.root ? (
         <div style={{ marginTop: "24px" }}>
           <h2>Page Content</h2>
           <pre style={{ background: "#f5f5f5", padding: "16px", borderRadius: "8px", overflow: "auto" }}>
