@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Onboarding</title>
+  <meta charset="utf-8">
+</head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+  <h1>Test Store Creation</h1>
+  <p>This is a minimal test page to verify redirects work.</p>
+  
+  <form id="testForm">
+    <label>Store Name: <input type="text" id="storeName" required style="padding: 8px; width: 100%; margin: 10px 0;"></label><br>
+    <button type="submit" style="padding: 10px 20px; background: blue; color: white; border: none; cursor: pointer;">
+      Create Store
+    </button>
+  </form>
+
+  <script>
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const storeName = document.getElementById('storeName').value;
+      if (!storeName) return alert('Enter a store name');
+      
+      const siteId = 'site-' + Date.now();
+      const pageData = {
+        root: { props: { siteName, businessType: 'retail' } },
+        content: []
+      };
+      
+      localStorage.setItem('draft-' + siteId, JSON.stringify({
+        siteId,
+        slug: 'home',
+        puck_data: pageData
+      }));
+      
+      console.log('Saved to localStorage, redirecting to /builder/' + siteId + '/edit');
+      window.location.href = '/builder/' + siteId + '/edit';
+    });
+  </script>
+</body>
+</html>
