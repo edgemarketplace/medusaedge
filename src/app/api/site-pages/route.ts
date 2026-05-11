@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/site_pages?site_id=eq.${siteId}&slug=eq.${slug}&limit=1`,
+      `${supabaseUrl}/rest/v1/site_pages?site_id=eq.${siteId}&slug=eq.${slug}&limit=1`,
       {
         headers: {
           apikey: SUPABASE_KEY,
@@ -26,11 +27,14 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Supabase load error:", response.status, errorText);
-      return NextResponse.json({ error: "Failed to load page" }, { status: response.status });
+      return NextResponse.json({ error: "Failed to load page", details: errorText }, { status: response.status });
     }
 
     const data = await response.json();
-    return NextResponse.json(data.length > 0 ? data[0] : null);
+    if (data.length === 0) {
+      return NextResponse.json({ error: "Not found", site_id: siteId, slug }, { status: 404 });
+    }
+    return NextResponse.json(data[0]);
   } catch (error: any) {
     console.error("API error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

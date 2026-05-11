@@ -26,15 +26,19 @@ export default function BuilderEditorPage() {
 
       // 1. Try API route first (loads from Supabase server-side)
       try {
+        console.log("Loading from API:", `/api/site-pages?site_id=${siteId}&slug=home`);
         const response = await fetch(`/api/site-pages?site_id=${siteId}&slug=home`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.puck_data) {
-            console.log("Loaded from Supabase via API");
-            setPuckData(data.puck_data);
-            setLoading(false);
-            return;
-          }
+        console.log("API response status:", response.status);
+        const result = await response.json();
+        console.log("API response:", result);
+
+        if (response.ok && result && result.puck_data) {
+          console.log("Loaded from Supabase via API");
+          setPuckData(result.puck_data);
+          setLoading(false);
+          return;
+        } else {
+          console.warn("API load failed or no data:", result?.error || "Unknown error");
         }
       } catch (error) {
         console.warn("API load failed, trying localStorage:", error);
@@ -55,6 +59,7 @@ export default function BuilderEditorPage() {
       }
 
       // 3. Nothing found
+      console.error("No draft found for siteId:", siteId);
       alert("Draft not found. Redirecting to onboarding.");
       router.push("/builder/new");
     };
