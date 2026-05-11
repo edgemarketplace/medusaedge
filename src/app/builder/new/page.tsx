@@ -85,6 +85,7 @@ export default function NewBuilderOnboarding() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("DEBUG: handleSubmit triggered", { answers });
     e.preventDefault();
     setLoading(true);
 
