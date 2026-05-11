@@ -24,7 +24,7 @@ export default function NewBuilderOnboarding() {
       // 1. Generate page from onboarding
       const generatedPage = generatePageFromOnboarding(answers);
       const siteId = `site-${Date.now()}`;
-      const slug = answers.siteName.toLowerCase().replace(/\s+/g, "-");
+      const slug = "home"; // Always use "home" for the main page
 
       // 2. Save to Supabase via API route (server-side)
       const saveResponse = await fetch("/api/site-pages", {

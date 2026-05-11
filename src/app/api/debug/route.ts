@@ -13,19 +13,33 @@ export async function GET() {
     tests: [],
   };
 
-  // Test 1: Check if site_pages table exists
+  // Test 1: Check site_pages table
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?limit=1`, {
+    // Check access
+    const accessResp = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?limit=1`, {
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
       },
     });
+    
+    // Count rows
+    const countResp = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?select=count`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: "count=exact",
+      },
+    });
+    
+    const rowCount = countResp.headers.get("content-range")?.split("/")[1] || "0";
+    
     results.tests.push({
       name: "site_pages table access",
-      status: response.ok ? "OK" : "FAIL",
-      httpStatus: response.status,
-      error: response.ok ? null : await response.text(),
+      status: accessResp.ok ? "OK" : "FAIL",
+      httpStatus: accessResp.status,
+      rowCount: parseInt(rowCount),
+      error: accessResp.ok ? null : await accessResp.text(),
     });
   } catch (error: any) {
     results.tests.push({
