@@ -1,87 +1,103 @@
-"use client";
+/**
+ * Storefront Page - Server Component
+ * 
+ * Renders a site's storefront using direct React components.
+ * NO Puck editor dependencies. NO createEdgePuckConfig().
+ */
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Render } from "@puckeditor/core";
-import "@puckeditor/core/puck.css";
-import { createEdgePuckConfig } from "packages/edge-templates/config-factory";
+import { loadPageRecord } from "packages/edge-templates/supabase-service";
+import { storefrontRegistry, getStorefrontComponent } from "packages/edge-sections/storefront-registry";
+import Link from "next/link";
 
-export default function StorefrontPage({
-  params,
-}: {
-  params: { subdomain: string }
-}) {
-  const [siteData, setSiteData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+interface PuckData {
+  root?: {
+    props?: Record<string, any>;
+  };
+  content?: Array<{
+    type: string;
+    props: Record<string, any>;
+  }>;
+}
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const baseUrl = window.location.origin;
-        const res = await fetch(`${baseUrl}/api/site-pages?site_id=${params.subdomain}&slug=home`);
+interface StorefrontPageProps {
+  params: {
+    subdomain: string;
+  };
+}
 
-        if (!res.ok) {
-          router.push("/404");
-          return;
-        }
-
-        const data = await res.json();
-        setSiteData(data);
-      } catch (error) {
-        console.error("Failed to load site:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, [params.subdomain, router]);
-
-  if (loading) {
+export default async function StorefrontPage({ params }: StorefrontPageProps) {
+  const { subdomain } = params;
+  
+  // Load page data server-side
+  const page = await loadPageRecord(subdomain, "home");
+  
+  // Defensive checks
+  if (!page?.puck_data) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-lg">Loading store...</div>
-      </div>
-    );
-  }
-
-  if (!siteData || !siteData.puck_data) {
-    return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Store not found</h1>
-          <a href="/builder/new" className="text-blue-600 hover:underline">
+          <Link href="/builder/new" className="text-blue-600 hover:underline">
             Create a store
-          </a>
+          </Link>
         </div>
       </div>
     );
   }
 
-  const { root, content } = siteData.puck_data;
+  const puckData = page.puck_data as PuckData;
+  const content = puckData?.content || [];
+  const rootProps = puckData?.root?.props || {};
 
-  const config = createEdgePuckConfig({
-    templateFamily: root?.props?.templateFamily || "retail-core",
-    businessType: root?.props?.businessType || "retail",
-    adminMode: false,
-  });
+  if (!Array.isArray(content) || content.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No content available</h1>
+          <Link href={`/builder/${subdomain}/edit`} className="text-blue-600 hover:underline">
+            ← Edit Store
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="storefront" data-template={rootProps.templateFamily || "retail-core"}>
+      {/* Edit button - only visible in development or with admin flag */}
       <div className="fixed top-4 right-4 z-50">
-        <a
-          href={`/builder/${params.subdomain}/edit`}
+        <Link
+          href={`/builder/${subdomain}/edit`}
           className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
         >
           ← Edit Store
-        </a>
+        </Link>
       </div>
 
-      <Render
-        config={config}
-        data={{ root, content }}
-      />
+      {/* Render sections directly using storefront registry */}
+      {content.map((block, index) => {
+        const Component = getStorefrontComponent(block.type);
+        
+        if (!Component) {
+          console.warn(`Storefront: Unknown section type "${block.type}" — skipping`);
+          return null;
+        }
+
+        // Merge root props (theme, etc.) with block props
+        const mergedProps = {
+          ...block.props,
+          theme: rootProps.theme,
+          locale: rootProps.locale || "en-US",
+          currency: rootProps.currency || "USD",
+          siteName: rootProps.siteName,
+        };
+
+        return (
+          <div key={block.props?.id || `block-${index}`} className="storefront-section">
+            <Component {...mergedProps} />
+          </div>
+        );
+      })}
     </div>
   );
 }
