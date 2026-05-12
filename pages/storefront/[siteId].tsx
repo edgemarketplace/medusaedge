@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { loadPage } from "packages/edge-templates/src/pagePersistence";
@@ -8,17 +6,26 @@ import type { NormalizedPage } from "packages/edge-templates/src/types";
 
 export default function StorefrontSitePage() {
   const router = useRouter();
-  const { siteId } = router.query;
-  const { preview } = router.query;
-
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [pageData, setPageData] = useState<NormalizedPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-
-  const isPreview = preview === "1";
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!siteId || typeof siteId !== "string") return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !router.isReady) return;
+    const { siteId: id, preview: p } = router.query;
+    if (typeof id === "string") setSiteId(id);
+    if (typeof p === "string") setPreview(p);
+  }, [mounted, router.isReady, router.query]);
+
+  useEffect(() => {
+    if (!siteId) return;
 
     async function loadSiteData() {
       try {
@@ -39,6 +46,10 @@ export default function StorefrontSitePage() {
     loadSiteData();
   }, [siteId]);
 
+  if (!mounted) {
+    return <div>Loading...</div>;
+  }
+
   if (loading) {
     return <div style={{ padding: "32px", textAlign: "center" }}>Loading store...</div>;
   }
@@ -53,18 +64,14 @@ export default function StorefrontSitePage() {
             Create Your Own Store
           </a>
         </div>
-        <div style={{ marginTop: "8px" }}>
-          <button onClick={() => router.back()} style={{ border: "1px solid #ccc", padding: "8px 16px", cursor: "pointer" }}>
-            Go Back
-          </button>
-        </div>
       </div>
     );
   }
 
+  const isPreview = preview === "1";
+
   return (
     <div>
-      {/* Preview Mode Banner */}
       {isPreview && (
         <div style={{ background: "#f0f0f0", padding: "12px 16px", borderBottom: "1px solid #ccc" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -93,48 +100,15 @@ export default function StorefrontSitePage() {
               >
                 Back to Editor
               </a>
-              <button
-                onClick={() => router.push(`/storefront/${siteId}`)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#666",
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Exit Preview
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Render the storefront */}
       <StorefrontPage
         root={pageData.root}
         content={pageData.content}
       />
-
-      {/* Floating Edit Button (visible when not in preview mode) */}
-      {!isPreview && (
-        <div style={{ position: "fixed", bottom: "32px", right: "32px" }}>
-          <a
-            href={`/builder/${siteId}/edit`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "12px 24px",
-              background: "#333",
-              color: "white",
-              textDecoration: "none",
-            }}
-          >
-            Edit Store
-          </a>
-        </div>
-      )}
     </div>
   );
 }
