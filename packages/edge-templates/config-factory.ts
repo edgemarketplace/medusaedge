@@ -1,97 +1,113 @@
 import React from "react";
-import { TemplateFamily, BusinessType } from "../edge-theme/types";
-import { EdgeRootProps } from "../edge-theme/types";
+import { getPreset } from "../edge-theme";
+import type { TemplateFamily, BusinessType, EdgeRootProps } from "../edge-theme/types";
 import retailCoreManifest from "./retailCoreManifest";
-import { CommerceHeader, commerceHeaderMeta } from "../edge-sections/headers/CommerceHeader";
-import { PromoHeader, promoHeaderMeta } from "../edge-sections/headers/PromoHeader";
-import { ProductHero, productHeroMeta } from "../edge-sections/heroes/ProductHero";
-import { FeaturedCollection, featuredCollectionMeta } from "../edge-sections/commerce/FeaturedCollection";
-import { ProductGrid, productGridMeta } from "../edge-sections/commerce/ProductGrid";
-import { ReviewStrip, reviewStripMeta } from "../edge-sections/proof/ReviewStrip";
-import { FAQ, faqMeta } from "../edge-sections/conversion/FAQ";
-import { CommerceFooter, commerceFooterMeta } from "../edge-sections/footers/CommerceFooter";
 
-// Map component names to their implementations and metadata
-const componentRegistry: Record<string, {
-  Component: React.FC<any>;
-  meta: any;
-  schema: Record<string, { type: string; label?: string }>;
-}> = {
-  CommerceHeader: {
-    Component: CommerceHeader,
-    meta: commerceHeaderMeta,
-    schema: {
-      siteName: { type: "text", label: "Site Name" },
-      logoUrl: { type: "text", label: "Logo URL" },
-      primaryCtaLabel: { type: "text", label: "Primary CTA Label" },
-      primaryCtaHref: { type: "text", label: "Primary CTA Link" },
-    },
-  },
-  PromoHeader: {
-    Component: PromoHeader,
-    meta: promoHeaderMeta,
-    schema: {
-      message: { type: "text", label: "Promo Message" },
-      ctaLabel: { type: "text", label: "CTA Label" },
-      ctaHref: { type: "text", label: "CTA Link" },
-    },
-  },
-  ProductHero: {
-    Component: ProductHero,
-    meta: productHeroMeta,
-    schema: {
-      headline: { type: "text", label: "Headline" },
-      subheadline: { type: "text", label: "Subheadline" },
-      ctaLabel: { type: "text", label: "CTA Label" },
-      ctaHref: { type: "text", label: "CTA Link" },
-      backgroundImage: { type: "text", label: "Background Image URL" },
-    },
-  },
-  FeaturedCollection: {
-    Component: FeaturedCollection,
-    meta: featuredCollectionMeta,
-    schema: {
-      title: { type: "text", label: "Section Title" },
-    },
-  },
-  ProductGrid: {
-    Component: ProductGrid,
-    meta: productGridMeta,
-    schema: {
-      title: { type: "text", label: "Section Title" },
-      columns: { type: "number", label: "Columns" },
-    },
-  },
-  ReviewStrip: {
-    Component: ReviewStrip,
-    meta: reviewStripMeta,
-    schema: {}, // Reviews passed as prop
-  },
-  FAQ: {
-    Component: FAQ,
-    meta: faqMeta,
-    schema: {
-      title: { type: "text", label: "Section Title" },
-    },
-  },
-  CommerceFooter: {
-    Component: CommerceFooter,
-    meta: commerceFooterMeta,
-    schema: {
-      siteName: { type: "text", label: "Site Name" },
-      description: { type: "text", label: "Footer Description" },
-    },
-  },
-};
+// Lazy component registry — components are loaded only when createEdgePuckConfig is called
+// This prevents webpack from pulling in ALL sections at import time
+async function buildComponentRegistry() {
+  const [
+    { CommerceHeader, commerceHeaderMeta },
+    { PromoHeader, promoHeaderMeta },
+    { ProductHero, productHeroMeta },
+    { FeaturedCollection, featuredCollectionMeta },
+    { ProductGrid, productGridMeta },
+    { ReviewStrip, reviewStripMeta },
+    { FAQ, faqMeta },
+    { CommerceFooter, commerceFooterMeta },
+  ] = await Promise.all([
+    import("../edge-sections/headers/CommerceHeader"),
+    import("../edge-sections/headers/PromoHeader"),
+    import("../edge-sections/heroes/ProductHero"),
+    import("../edge-sections/commerce/FeaturedCollection"),
+    import("../edge-sections/commerce/ProductGrid"),
+    import("../edge-sections/proof/ReviewStrip"),
+    import("../edge-sections/conversion/FAQ"),
+    import("../edge-sections/footers/CommerceFooter"),
+  ]);
 
-export function createEdgePuckConfig(ctx: {
+  return {
+    CommerceHeader: {
+      Component: CommerceHeader,
+      meta: commerceHeaderMeta,
+      schema: {
+        siteName: { type: "text", label: "Site Name" },
+        logoUrl: { type: "text", label: "Logo URL" },
+        primaryCtaLabel: { type: "text", label: "Primary CTA Label" },
+        primaryCtaHref: { type: "text", label: "Primary CTA Link" },
+      },
+    },
+    PromoHeader: {
+      Component: PromoHeader,
+      meta: promoHeaderMeta,
+      schema: {
+        message: { type: "text", label: "Promo Message" },
+        ctaLabel: { type: "text", label: "CTA Label" },
+        ctaHref: { type: "text", label: "CTA Link" },
+      },
+    },
+    ProductHero: {
+      Component: ProductHero,
+      meta: productHeroMeta,
+      schema: {
+        headline: { type: "text", label: "Headline" },
+        subheadline: { type: "text", label: "Subheadline" },
+        ctaLabel: { type: "text", label: "CTA Label" },
+        ctaHref: { type: "text", label: "CTA Link" },
+        backgroundImage: { type: "text", label: "Background Image URL" },
+      },
+    },
+    FeaturedCollection: {
+      Component: FeaturedCollection,
+      meta: featuredCollectionMeta,
+      schema: {
+        title: { type: "text", label: "Section Title" },
+      },
+    },
+    ProductGrid: {
+      Component: ProductGrid,
+      meta: productGridMeta,
+      schema: {
+        title: { type: "text", label: "Section Title" },
+        columns: { type: "number", label: "Columns" },
+      },
+    },
+    ReviewStrip: {
+      Component: ReviewStrip,
+      meta: reviewStripMeta,
+      schema: {}, // Reviews passed as prop
+    },
+    FAQ: {
+      Component: FAQ,
+      meta: faqMeta,
+      schema: {
+        title: { type: "text", label: "Section Title" },
+      },
+    },
+    CommerceFooter: {
+      Component: CommerceFooter,
+      meta: commerceFooterMeta,
+      schema: {
+        siteName: { type: "text", label: "Site Name" },
+        description: { type: "text", label: "Footer Description" },
+      },
+    },
+  };
+}
+
+export async function createEdgePuckConfig(ctx: {
   templateFamily: TemplateFamily;
   businessType: BusinessType;
   adminMode?: boolean;
+  stylePreset?: string;
 }) {
   // Get manifest for template family (start with retail-core)
   const manifest = retailCoreManifest; // Expand later for other families
   const allowedSections = new Set(manifest.allowedSections);
+  const theme = getPreset(ctx.stylePreset || manifest.defaultRootProps.stylePreset || "modern-commerce");
+
+  // Build component registry lazily (only when this function is called)
+  const componentRegistry = await buildComponentRegistry();
 
   // Filter components to allowed sections
   const components: Record<string, any> = {};
@@ -103,10 +119,7 @@ export function createEdgePuckConfig(ctx: {
     // Build Puck component config
     components[name] = {
       fields: entry.schema,
-      render: (props: any) => {
-        const theme = props.theme; // Injected by renderer
-        return React.createElement(entry.Component, { ...props, theme });
-      },
+      render: (props: any) => React.createElement(entry.Component, { ...props, theme }),
       label: name,
       category: entry.meta.category,
     };
@@ -122,6 +135,18 @@ export function createEdgePuckConfig(ctx: {
     fields: {
       siteName: { type: "text", label: "Site Name" },
       siteTagline: { type: "text", label: "Tagline" },
+      stylePreset: {
+        type: "select",
+        label: "Style Preset",
+        options: [
+          { label: "Modern Commerce", value: "modern-commerce" },
+          { label: "Boutique Luxury", value: "boutique-luxury" },
+          { label: "Professional Agency", value: "professional-agency" },
+          { label: "Industrial Supply", value: "industrial-supply" },
+          { label: "Creative Studio", value: "creative-studio" },
+          { label: "Tech Consultant", value: "tech-consultant" },
+        ],
+      },
       businessType: {
         type: "select",
         label: "Business Type",
@@ -136,8 +161,16 @@ export function createEdgePuckConfig(ctx: {
         options: [
           { label: "Native", value: "native" },
           { label: "Stripe Link", value: "stripe-link" },
+          { label: "Payment Link", value: "payment-link" },
+          { label: "Quote Only", value: "quote-only" },
         ],
       },
+      currency: { type: "text", label: "Currency" },
+      locale: { type: "text", label: "Locale" },
+      supportEmail: { type: "text", label: "Support Email" },
+      supportPhone: { type: "text", label: "Support Phone" },
+      seoTitle: { type: "text", label: "SEO Title" },
+      seoDescription: { type: "textarea", label: "SEO Description" },
     },
   };
 

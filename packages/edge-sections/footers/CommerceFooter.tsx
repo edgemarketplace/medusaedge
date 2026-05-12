@@ -47,7 +47,10 @@ export const CommerceFooter: React.FC<EdgeSectionProps> = ({
           </div>
         </div>
       </div>
-      <div style={{ color: mutedColor }} className="max-w-7xl mx-auto mt-8 pt-8 border-t text-center text-sm" style={{ borderColor }}>
+      <div
+        style={{ color: mutedColor, borderColor }}
+        className="max-w-7xl mx-auto mt-8 pt-8 border-t text-center text-sm"
+      >
         © {new Date().getFullYear()} {siteName}. All rights reserved.
       </div>
     </footer>

@@ -1,9 +1,9 @@
-import { BusinessType } from "../edge-theme/types";
+import type { EdgeRootProps, ThemeTokens } from "../edge-theme/types";
 
 export type SectionMeta = {
   category: string;
   variation: string;
-  verticals: BusinessType[];
+  verticals: EdgeRootProps["businessType"][];
   required?: boolean;
   singleton?: boolean;
   recommendedOrder?: number;
@@ -12,6 +12,6 @@ export type SectionMeta = {
 
 export type EdgeSectionProps = {
   id?: string;
-  theme?: any; // ThemeTokens from edge-theme
+  theme?: ThemeTokens;
   [key: string]: any;
 };

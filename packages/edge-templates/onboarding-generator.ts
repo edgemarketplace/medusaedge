@@ -1,4 +1,4 @@
-import { EdgeRootProps } from "packages/edge-theme/types";
+import type { EdgeRootProps } from "../edge-theme/types";
 import retailCoreManifest from "./retailCoreManifest";
 
 export type OnboardingAnswers = {
@@ -47,5 +47,6 @@ export function generatePageFromOnboarding(answers: OnboardingAnswers) {
   return {
     root: { props: rootProps },
     content: starterContent,
+    zones: {},
   };
 }

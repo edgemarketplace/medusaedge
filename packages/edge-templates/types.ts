@@ -1,13 +1,13 @@
-import { TemplateFamily, BusinessType } from "../edge-theme/types";
+import type { EdgeRootProps } from "../edge-theme/types";
 
 export type TemplateManifest = {
-  id: TemplateFamily;
+  id: EdgeRootProps["templateFamily"];
   label: string;
-  businessType: BusinessType;
+  businessType: EdgeRootProps["businessType"];
   allowedSections: string[];
   requiredSections: string[];
   recommendedStack: string[];
-  defaultRootProps: Partial<Record<string, any>>;
+  defaultRootProps: Partial<EdgeRootProps>;
   starterContent: unknown[];
   validationRules: {
     minHeroes: number;

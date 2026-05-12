@@ -2,6 +2,9 @@
 const path = require('path');
 
 const nextConfig = {
+  experimental: {
+    optimizePackageImports: ["@medusajs/ui", "lucide-react", "framer-motion"],
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),

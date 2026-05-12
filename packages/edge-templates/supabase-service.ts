@@ -12,6 +12,7 @@ export type SitePageRecord = {
   puck_data: {
     root: Record<string, any>;
     content: unknown[];
+    zones?: Record<string, unknown>;
   };
   normalized_manifest?: any;
   status?: string;
@@ -40,13 +41,13 @@ export async function savePageRecord(page: SitePageRecord): Promise<SitePageReco
   }
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?on_conflict=site_id,slug`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
-        Prefer: "return=representation",
+        Prefer: "return=representation,resolution=merge-duplicates",
       },
       body: JSON.stringify({
         site_id: page.site_id,

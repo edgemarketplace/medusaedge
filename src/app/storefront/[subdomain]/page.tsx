@@ -6,10 +6,10 @@ import { Render } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { createEdgePuckConfig } from "packages/edge-templates/config-factory";
 
-export default function StorefrontPage({ 
-  params 
-}: { 
-  params: { siteId: string } 
+export default function StorefrontPage({
+  params,
+}: {
+  params: { subdomain: string }
 }) {
   const [siteData, setSiteData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,13 +19,13 @@ export default function StorefrontPage({
     async function loadData() {
       try {
         const baseUrl = window.location.origin;
-        const res = await fetch(`${baseUrl}/api/site-pages?site_id=${params.siteId}&slug=home`);
-        
+        const res = await fetch(`${baseUrl}/api/site-pages?site_id=${params.subdomain}&slug=home`);
+
         if (!res.ok) {
           router.push("/404");
           return;
         }
-        
+
         const data = await res.json();
         setSiteData(data);
       } catch (error) {
@@ -34,9 +34,9 @@ export default function StorefrontPage({
         setLoading(false);
       }
     }
-    
+
     loadData();
-  }, [params.siteId]);
+  }, [params.subdomain, router]);
 
   if (loading) {
     return (
@@ -71,7 +71,7 @@ export default function StorefrontPage({
     <div>
       <div className="fixed top-4 right-4 z-50">
         <a
-          href={`/builder/${params.siteId}/edit`}
+          href={`/builder/${params.subdomain}/edit`}
           className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
         >
           ← Edit Store
