@@ -1,25 +1,19 @@
 /**
  * Deploy Storefront API
- * 
+ *
  * POST /api/deploy-storefront
  * Initiates storefront deployment
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { loadDraftRecord } from "@/lib/builder-draft-store";
+import { triggerDeployment } from "packages/edge-templates/publish-stub";
+import { loadPageRecord } from "packages/edge-templates/supabase-service";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      siteId,
-      checkoutIntentId,
-      status = "deploy_requested",
-    } = body;
+    const { siteId } = body;
 
     if (!siteId) {
       return NextResponse.json(
@@ -28,34 +22,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or update deployment record
-    const { data, error } = await supabase
-      .from("deployments")
-      .upsert([
-        {
-          site_id: siteId,
-          checkout_intent_id: checkoutIntentId || null,
-          status: status,
-          last_published_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ], {
-        onConflict: "site_id",
-      })
-      .select()
-      .single();
+    const page = (await loadPageRecord(siteId, "home")) || loadDraftRecord(siteId, "home");
+    const puckData = page?.puck_data;
 
-    if (error) {
-      console.error("Supabase error:", error);
-      
-      // If table doesn't exist, return helpful error
-      if (error.code === "42P01") {
-        return NextResponse.json(
-          { error: "Deployments table not found. Please run database migration." },
-          { status: 500 }
-        );
-      }
-      
+    if (!puckData) {
+      return NextResponse.json(
+        { error: "No saved storefront page found for this site" },
+        { status: 404 }
+      );
+    }
+
+    const success = await triggerDeployment(siteId, puckData);
+
+    if (!success) {
       return NextResponse.json(
         { error: "Failed to initiate deployment" },
         { status: 500 }
@@ -65,7 +44,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Deployment initiated",
-      deployment: data,
+      previewUrl: `/storefront/${siteId}?preview=1`,
+      liveUrl: `/storefront/${siteId}`,
     });
   } catch (error: any) {
     console.error("Deploy API error:", error);

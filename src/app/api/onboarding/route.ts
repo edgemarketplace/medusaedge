@@ -1,5 +1,6 @@
 import { saveDraftRecord } from "@/lib/builder-draft-store";
 import { generatePageFromOnboarding } from "packages/edge-templates/onboarding-generator";
+import { createDeployment, savePageRecord } from "packages/edge-templates/supabase-service";
 
 function normalizePayload(body: Record<string, FormDataEntryValue | undefined>) {
   return {
@@ -34,49 +35,30 @@ export async function POST(request: Request) {
     const slug = "home";
     const generatedPage = generatePageFromOnboarding(body);
 
-    const draft = {
+    const draft = saveDraftRecord({
       site_id: siteId,
       slug,
       puck_data: generatedPage,
       status: "draft",
       created_at: new Date().toISOString(),
-    };
+    });
 
-    saveDraftRecord(draft);
+    const persistedPage = await savePageRecord({
+      site_id: siteId,
+      slug,
+      puck_data: generatedPage,
+      status: "draft",
+    });
 
-    const supabaseUrl = process.env.SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    const deployment = await createDeployment(
+      siteId,
+      generatedPage?.root?.props?.checkoutMode || "native"
+    );
 
-    let persisted = false;
-    let persistenceMessage: string | undefined;
-
-    if (supabaseKey) {
-      const saveResponse = await fetch(`${supabaseUrl}/rest/v1/site_pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          Prefer: "resolution=merge-duplicates,return=representation",
-        },
-        body: JSON.stringify({
-          site_id: siteId,
-          slug,
-          puck_data: generatedPage,
-          status: "draft",
-        }),
-      });
-
-      if (!saveResponse.ok) {
-        persistenceMessage = await saveResponse.text();
-        console.error("Onboarding persistence error:", persistenceMessage);
-      } else {
-        persisted = true;
-      }
-    } else {
-      persistenceMessage = "SUPABASE_SERVICE_ROLE_KEY not configured; returning local draft only.";
-      console.warn(persistenceMessage);
-    }
+    const persisted = Boolean(persistedPage);
+    const persistenceMessage = persisted
+      ? undefined
+      : "Supabase persistence unavailable; returning local draft only.";
 
     if (wantsHtmlRedirect) {
       return Response.redirect(new URL(`/builder/${siteId}/edit`, request.url), 303);
@@ -88,6 +70,7 @@ export async function POST(request: Request) {
       draft,
       persisted,
       persistenceMessage,
+      deployment,
     });
   } catch (error) {
     console.error("Onboarding API error:", error);

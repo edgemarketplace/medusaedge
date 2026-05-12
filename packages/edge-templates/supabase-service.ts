@@ -1,4 +1,6 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
+import { buildSectionManifest, normalizePageData, type PuckPageData } from "./page-contract";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nzxedlagqtzadyrmgkhq.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 if (!SUPABASE_KEY) {
@@ -9,12 +11,8 @@ export type SitePageRecord = {
   id?: string;
   site_id?: string;
   slug?: string;
-  puck_data: {
-    root: Record<string, any>;
-    content: unknown[];
-    zones?: Record<string, unknown>;
-  };
-  normalized_manifest?: any;
+  puck_data: PuckPageData;
+  normalized_manifest?: ReturnType<typeof buildSectionManifest>;
   status?: string;
   created_at?: string;
   updated_at?: string;
@@ -34,6 +32,31 @@ export type DeploymentRecord = {
   updated_at?: string;
 };
 
+async function restFetch(path: string, init: RequestInit = {}) {
+  return fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      ...(init.headers || {}),
+    },
+  });
+}
+
+function toPersistedPageRecord(page: SitePageRecord) {
+  const normalizedPage = normalizePageData(page.puck_data || {});
+  const normalizedManifest = page.normalized_manifest || buildSectionManifest(normalizedPage);
+
+  return {
+    site_id: page.site_id,
+    slug: page.slug || "home",
+    puck_data: normalizedPage,
+    normalized_manifest: normalizedManifest,
+    status: page.status || "draft",
+  };
+}
+
 export async function savePageRecord(page: SitePageRecord): Promise<SitePageRecord | null> {
   if (!SUPABASE_KEY) {
     console.error("Cannot save to Supabase: SUPABASE_SERVICE_ROLE_KEY not set");
@@ -41,20 +64,12 @@ export async function savePageRecord(page: SitePageRecord): Promise<SitePageReco
   }
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/site_pages?on_conflict=site_id,slug`, {
+    const response = await restFetch(`/site_pages?on_conflict=site_id,slug`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
         Prefer: "return=representation,resolution=merge-duplicates",
       },
-      body: JSON.stringify({
-        site_id: page.site_id,
-        slug: page.slug || "home",
-        puck_data: page.puck_data,
-        status: page.status || "draft",
-      }),
+      body: JSON.stringify(toPersistedPageRecord(page)),
     });
 
     if (!response.ok) {
@@ -62,8 +77,9 @@ export async function savePageRecord(page: SitePageRecord): Promise<SitePageReco
       console.error("Failed to save page to Supabase:", response.status, errorText);
       return null;
     }
+
     const data = await response.json();
-    return data[0];
+    return data[0] || null;
   } catch (error) {
     console.error("Supabase save error:", error);
     return null;
@@ -77,14 +93,9 @@ export async function loadPageRecord(siteId: string, slug: string = "home"): Pro
   }
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/site_pages?site_id=eq.${siteId}&slug=eq.${slug}&limit=1`,
-      {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      }
+    const response = await restFetch(
+      `/site_pages?site_id=eq.${encodeURIComponent(siteId)}&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      { method: "GET", headers: { Prefer: "return=representation" } }
     );
 
     if (!response.ok) {
@@ -92,6 +103,7 @@ export async function loadPageRecord(siteId: string, slug: string = "home"): Pro
       console.error("Failed to load page from Supabase:", response.status, errorText);
       return null;
     }
+
     const data = await response.json();
     return data.length > 0 ? data[0] : null;
   } catch (error) {
@@ -104,13 +116,8 @@ export async function updatePageStatus(siteId: string, status: string): Promise<
   if (!SUPABASE_KEY) return;
 
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/site_pages?site_id=eq.${siteId}`, {
+    await restFetch(`/site_pages?site_id=eq.${encodeURIComponent(siteId)}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-      },
       body: JSON.stringify({
         status,
         updated_at: new Date().toISOString(),
@@ -125,18 +132,16 @@ export async function createDeployment(siteId: string, checkoutMode: string): Pr
   if (!SUPABASE_KEY) return null;
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/deployments`, {
+    const response = await restFetch(`/deployments?on_conflict=site_id`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        Prefer: "return=representation",
+        Prefer: "return=representation,resolution=merge-duplicates",
       },
       body: JSON.stringify({
         site_id: siteId,
         status: "draft",
         checkout_mode: checkoutMode,
+        updated_at: new Date().toISOString(),
       }),
     });
 
@@ -144,30 +149,24 @@ export async function createDeployment(siteId: string, checkoutMode: string): Pr
       console.error("Failed to create deployment:", await response.text());
       return null;
     }
+
     const data = await response.json();
-    return data[0];
+    return data[0] || null;
   } catch (error) {
     console.error("Deployment creation error:", error);
     return null;
   }
 }
 
-export async function updateDeploymentStatus(
-  siteId: string,
-  status: string
-): Promise<void> {
+export async function updateDeploymentStatus(siteId: string, status: string, deploymentMetadata?: any): Promise<void> {
   if (!SUPABASE_KEY) return;
 
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/deployments?site_id=eq.${siteId}`, {
+    await restFetch(`/deployments?site_id=eq.${encodeURIComponent(siteId)}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-      },
       body: JSON.stringify({
         status,
+        deployment_metadata: deploymentMetadata,
         last_published_at: status === "published" ? new Date().toISOString() : undefined,
         updated_at: new Date().toISOString(),
       }),

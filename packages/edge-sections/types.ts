@@ -1,4 +1,5 @@
 import type { EdgeRootProps, ThemeTokens } from "../edge-theme/types";
+import type { SectionBindingProps } from "../edge-commerce/catalog";
 
 export type SectionMeta = {
   category: string;
@@ -10,7 +11,7 @@ export type SectionMeta = {
   maxInstances?: number;
 };
 
-export type EdgeSectionProps = {
+export type EdgeSectionProps = SectionBindingProps & {
   id?: string;
   theme?: ThemeTokens;
   [key: string]: any;

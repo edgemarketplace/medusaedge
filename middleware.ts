@@ -1,86 +1,44 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-/**
- * Middleware for Edge Marketplace Hub.
- *
- * Canonical tenant runtime:
- *   tenant.edgemarketplacehub.com -> /site/[subdomain]
- *
- * Keep this file in sync with src/middleware.ts while the repo still contains
- * both locations. Matching behavior prevents route drift during consolidation.
- */
 export function middleware(request: NextRequest) {
-  const host = request.headers.get("host") || ""
-  const pathname = request.nextUrl.pathname
+  const pathname = request.nextUrl.pathname;
+  const hostname = request.headers.get("host") || "";
 
-  // Skip API routes, Next internals, and static assets.
-  if (
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next()
-  }
-
-  const url = request.nextUrl.clone()
-  const isLocalhost = host.includes("localhost")
-  const baseDomain = isLocalhost ? "localhost:3000" : "edgemarketplacehub.com"
-  const reservedSubdomains = new Set(["www", "api", "admin", "mail", "ftp"])
-
-  let response: NextResponse
-
-  const isTenantSubdomain =
-    host.endsWith(`.${baseDomain}`) &&
-    host !== baseDomain &&
-    !host.startsWith("www.")
-
-  if (isTenantSubdomain) {
-    const subdomain = host.replace(`.${baseDomain}`, "").split(":")[0]
-
-    if (!reservedSubdomains.has(subdomain)) {
-      url.pathname = `/site/${subdomain}`
-      response = NextResponse.rewrite(url)
-      response.headers.set("x-tenant", subdomain)
-    } else {
-      response = NextResponse.next()
-    }
-  } else {
-    response = NextResponse.next()
-  }
-
-  // Redirect old builder-v2 routes to builder-v3
-  if (pathname.startsWith("/builder-v2")) {
-    const newPath = pathname.replace("/builder-v2", "/builder-v3/puck")
-    // Handle /builder-v2 -> /builder-v3/puck/luxury-fashion
-    const redirectUrl = newPath === "/builder-v3/puck" ? "/builder-v3/puck/luxury-fashion" : newPath
-    return NextResponse.redirect(new URL(redirectUrl, request.url))
-  }
-
-  // Puck editor routes need eval/inline style allowances for the editor UI.
-  // Cover ALL builder routes: /builder/new, /builder/[siteId]/edit, /builder-v3/, /builder-v2/puck/
+  // Handle builder routes - add CSP for Puck editor
   if (
     pathname.startsWith("/builder/") ||
-    pathname.startsWith("/builder-v2/puck/") ||
-    pathname.startsWith("/builder-v3/")
+    pathname.startsWith("/builder-v2/") ||
+    pathname.startsWith("/builder-v3/") ||
+    pathname.startsWith("/storefront/")
   ) {
+    const response = NextResponse.next();
+    
+    // CSP header for Puck editor (allows unsafe-eval required by Puck)
     response.headers.set(
       "Content-Security-Policy",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel-insights.com https://*.vercel.com https://js.stripe.com; " +
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://rsms.me; " +
-      "font-src 'self' data: https://fonts.gstatic.com https://rsms.me; " +
-      "img-src 'self' data: https:; " +
-      "frame-src 'self' https://js.stripe.com https://*.edgemarketplacehub.com;"
-    )
-
-    // Prevent Cloudflare/Vercel/browser caching on builder routes
-    response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
-    response.headers.set("Pragma", "no-cache")
-    response.headers.set("Expires", "0")
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    );
+    
+    return response;
   }
 
-  return response
+  // Handle subdomain routing for storefronts
+  const subdomainMatch = hostname.match(/^([^.]+)\.edgemarketplacehub\.com(:\d+)?$/);
+  if (subdomainMatch && subdomainMatch[1]) {
+    const subdomain = subdomainMatch[1];
+    const reserved = ["www", "api", "admin", "mail"];
+    
+    if (!reserved.includes(subdomain)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/storefront/${subdomain}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/:path*"],
-}
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};

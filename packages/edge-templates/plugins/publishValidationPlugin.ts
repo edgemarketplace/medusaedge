@@ -61,6 +61,10 @@ export function getPublishValidationErrors(data: PublishValidationTarget) {
     errors.push("SEO description is required");
   }
 
+  if (!rootProps.mobilePreviewChecked) {
+    errors.push("Review the mobile preview before publishing");
+  }
+
   return errors;
 }
 

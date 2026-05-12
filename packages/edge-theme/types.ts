@@ -56,4 +56,6 @@ export type EdgeRootProps = {
   locale: string;
   seoTitle?: string;
   seoDescription?: string;
+  mobilePreviewChecked?: boolean;
+  theme?: ThemeTokens;
 };

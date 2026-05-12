@@ -1,17 +1,19 @@
 /**
  * Storefront Page - Server Component
- * 
+ *
  * Renders a site's storefront using direct React components.
  * NO Puck editor dependencies. NO createEdgePuckConfig().
- * 
+ *
  * Public storefront = customer-facing live page
  * Preview mode = ?preview=1 query param (for store owners)
  */
 
-import { loadPageRecord } from "packages/edge-templates/supabase-service";
-import { getStorefrontComponent } from "packages/edge-sections/storefront-registry";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { loadDraftRecord } from "@/lib/builder-draft-store";
+import { getPreset } from "packages/edge-theme";
+import { getStorefrontComponent } from "packages/edge-sections/storefront-registry";
+import { loadPageRecord } from "packages/edge-templates/supabase-service";
 
 interface PuckData {
   root?: {
@@ -32,10 +34,26 @@ interface StorefrontPageProps {
   };
 }
 
+async function loadStorefrontPage(siteId: string) {
+  return (await loadPageRecord(siteId, "home")) || loadDraftRecord(siteId, "home");
+}
+
+function getResolvedRootProps(rootProps: Record<string, any> = {}) {
+  const stylePreset = rootProps.stylePreset || "modern-commerce";
+
+  return {
+    ...rootProps,
+    stylePreset,
+    theme: rootProps.theme || getPreset(stylePreset),
+    currency: rootProps.currency || "USD",
+    locale: rootProps.locale || "en-US",
+  };
+}
+
 export async function generateMetadata({ params }: StorefrontPageProps): Promise<Metadata> {
-  const page = await loadPageRecord(params.subdomain, "home");
-  const rootProps = (page?.puck_data as PuckData)?.root?.props || {};
-  
+  const page = await loadStorefrontPage(params.subdomain);
+  const rootProps = getResolvedRootProps((page?.puck_data as PuckData)?.root?.props || {});
+
   return {
     title: rootProps.seoTitle || `${rootProps.siteName || "Store"} - Online Store`,
     description: rootProps.seoDescription || `Shop at ${rootProps.siteName || "our store"} for the best products.`,
@@ -45,11 +63,8 @@ export async function generateMetadata({ params }: StorefrontPageProps): Promise
 export default async function StorefrontPage({ params, searchParams }: StorefrontPageProps) {
   const { subdomain } = params;
   const isPreviewMode = searchParams.preview === "1";
-  
-  // Load page data server-side
-  const page = await loadPageRecord(subdomain, "home");
-  
-  // Defensive checks
+  const page = await loadStorefrontPage(subdomain);
+
   if (!page?.puck_data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -65,7 +80,7 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
 
   const puckData = page.puck_data as PuckData;
   const content = puckData?.content || [];
-  const rootProps = puckData?.root?.props || {};
+  const rootProps = getResolvedRootProps(puckData?.root?.props || {});
 
   if (!Array.isArray(content) || content.length === 0) {
     return (
@@ -89,7 +104,6 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
 
   return (
     <div className="storefront" data-template={rootProps.templateFamily || "retail-core"}>
-      {/* Preview mode controls - ONLY visible in preview mode */}
       {isPreviewMode && (
         <div className="fixed top-4 right-4 z-50 flex gap-2">
           <Link
@@ -107,22 +121,19 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
         </div>
       )}
 
-      {/* Render sections directly using storefront registry */}
       {content.map((block, index) => {
         const Component = getStorefrontComponent(block.type);
-        
+
         if (!Component) {
           console.warn(`Storefront: Unknown section type "${block.type}" — skipping`);
           return null;
         }
 
-        // Merge root props (theme, etc.) with block props
-        // Inject checkoutUrl for CTAs
         const mergedProps = {
           ...block.props,
           theme: rootProps.theme,
-          locale: rootProps.locale || "en-US",
-          currency: rootProps.currency || "USD",
+          locale: rootProps.locale,
+          currency: rootProps.currency,
           siteName: rootProps.siteName,
           checkoutUrl: `/checkout/${subdomain}`,
         };

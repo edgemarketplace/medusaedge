@@ -20,6 +20,7 @@ export const retailCoreManifest: TemplateManifest = {
     "CommerceHeader",
     "ProductHero",
     "FeaturedCollection",
+    "ProductGrid",
     "ReviewStrip",
     "FAQ",
     "CommerceFooter",
