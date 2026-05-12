@@ -1,61 +1,75 @@
-/**
- * Launch Page - Post-checkout store deployment
- * 
- * Shows captured checkout intent and allows store owner to deploy live.
- */
+"use client";
 
-import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-interface LaunchPageProps {
-  params: {
-    siteId: string;
-  };
-  searchParams: {
-    checkout_intent?: string;
-  };
+interface CheckoutIntent {
+  id: string;
+  customer_name: string;
+  email: string;
+  product_interest?: string;
+  status: string;
 }
 
-export default async function LaunchPage({ params, searchParams }: LaunchPageProps) {
-  const { siteId } = params;
-  const checkoutIntentId = searchParams.checkout_intent;
+export default function LaunchPage() {
+  const params = useParams<{ siteId: string }>();
+  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const siteId = params.siteId;
+  const checkoutIntentId = searchParams.get("checkout_intent");
   
-  // Load site data with error handling
-  let siteName = "Your Store";
-  try {
-    const { loadPageRecord } = await import("packages/edge-templates/supabase-service");
-    const page = await loadPageRecord(siteId, "home");
-    
-    if (page?.puck_data) {
-      const rootProps = (page.puck_data as any)?.root?.props || {};
-      siteName = rootProps.siteName || "Your Store";
-    }
-  } catch (error) {
-    console.error("Failed to load page record:", error);
-    // Continue with default siteName
-  }
+  const [siteName, setSiteName] = useState("Your Store");
+  const [checkoutIntent, setCheckoutIntent] = useState<CheckoutIntent | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Load checkout intent if provided
-  let checkoutIntent: any = null;
-  if (checkoutIntentId) {
+  useEffect(() => {
+    // Load site name from localStorage or API
     try {
-      const { createClient } = await import("@supabase/supabase-js");
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
-      if (supabaseUrl && supabaseServiceKey) {
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        const { data } = await supabase
-          .from("checkout_intents")
-          .select("*")
-          .eq("id", checkoutIntentId)
-          .single();
-        checkoutIntent = data;
+      const stored = localStorage.getItem(`draft-${siteId}`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        const name = data?.puck_data?.root?.props?.siteName;
+        if (name) setSiteName(name);
       }
-    } catch (error) {
-      console.error("Failed to load checkout intent:", error);
+    } catch (e) {
+      console.error("Failed to load site name:", e);
     }
-  }
+
+    // Load checkout intent if provided
+    if (checkoutIntentId) {
+      fetch(`/api/checkout-intent?id=${checkoutIntentId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) setCheckoutIntent(data);
+        })
+        .catch(err => console.error("Failed to load checkout intent:", err));
+    }
+  }, [siteId, checkoutIntentId]);
+
+  const handleDeploy = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/deploy-storefront", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteId,
+          checkoutIntentId: checkoutIntent?.id,
+          status: "deploy_requested",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Deploy failed");
+
+      alert("Store deployed successfully!");
+      router.push(`/storefront/${siteId}`);
+    } catch (error: any) {
+      alert(error.message || "Deploy failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,25 +129,11 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
           {/* Launch Actions */}
           <div className="space-y-4">
             <button
-              onClick={() => {
-                fetch("/api/deploy-storefront", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    siteId,
-                    checkoutIntentId: checkoutIntent?.id,
-                    status: "deploy_requested",
-                  }),
-                }).then(() => {
-                  window.location.href = `/storefront/${siteId}`;
-                }).catch((err) => {
-                  console.error("Deploy failed:", err);
-                  alert("Deploy failed. Please try again.");
-                });
-              }}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md font-medium hover:bg-blue-700"
+              onClick={handleDeploy}
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400"
             >
-              Deploy Live Store
+              {loading ? "Deploying..." : "Deploy Live Store"}
             </button>
 
             <Link
