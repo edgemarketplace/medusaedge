@@ -27,7 +27,6 @@ export default function CheckoutForm({ siteId, siteName }: CheckoutFormProps) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -54,35 +53,15 @@ export default function CheckoutForm({ siteId, siteName }: CheckoutFormProps) {
         throw new Error(data.error || "Failed to submit order");
       }
 
-      setSuccess(true);
+      const result = await res.json();
+      
+      // Redirect to launch page with checkout intent ID
+      router.push(`/launch/${siteId}?checkout_intent=${result.id}`);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
-    } finally {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">Your order request has been received!</h3>
-        <p className="text-gray-600 mb-6">
-          {siteName} will contact you shortly to complete your purchase.
-        </p>
-        <button
-          onClick={() => router.push(`/storefront/${siteId}`)}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-        >
-          Back to Store
-        </button>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

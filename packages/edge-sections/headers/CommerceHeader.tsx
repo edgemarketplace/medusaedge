@@ -7,11 +7,15 @@ export const CommerceHeader: React.FC<EdgeSectionProps> = ({
   navItems = [],
   primaryCtaLabel = "Shop Now",
   primaryCtaHref = "/shop",
+  checkoutUrl,
   theme,
 }) => {
   const bgColor = theme?.colors?.bg || "#ffffff";
   const textColor = theme?.colors?.text || "#1a1a1a";
   const borderColor = theme?.colors?.border || "#dee2e6";
+  
+  // Use checkoutUrl if provided (from storefront), otherwise fall back to primaryCtaHref
+  const finalCtaHref = checkoutUrl || primaryCtaHref;
 
   return (
     <header style={{ backgroundColor: bgColor, borderBottom: `1px solid ${borderColor}` }} className="px-6 py-4">
@@ -30,9 +34,9 @@ export const CommerceHeader: React.FC<EdgeSectionProps> = ({
           ))}
         </nav>
         <a
-          href={primaryCtaHref}
+          href={finalCtaHref}
           style={{ backgroundColor: theme?.colors?.primary, color: theme?.colors?.primaryContrast }}
-          className="px-4 py-2 rounded-md text-sm font-medium"
+          className="px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
           {primaryCtaLabel}
         </a>
