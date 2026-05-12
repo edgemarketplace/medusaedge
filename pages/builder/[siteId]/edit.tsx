@@ -7,12 +7,13 @@ import { useRouter } from "next/router";
 import { createEdgePuckConfig } from "packages/edge-templates/src/createEdgePuckConfig";
 import { loadPage, savePage } from "packages/edge-templates/src/pagePersistence";
 import { publishPage } from "packages/edge-templates/src/publishStub";
+import { generatePageFromOnboarding } from "packages/edge-templates/src/onboardingGenerator";
 import type { NormalizedPage } from "packages/edge-templates/src/types";
 
 export default function SiteEditor() {
   const router = useRouter();
   const { siteId } = router.query;
-  
+
   const [pageData, setPageData] = useState<NormalizedPage | null>(null);
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,15 +23,22 @@ export default function SiteEditor() {
 
   useEffect(() => {
     if (!siteId || typeof siteId !== "string") return;
-    
+
     async function loadPageData() {
       try {
-        const data = await loadPage(siteId);
-        if (data) {
-          setPageData(data);
-        } else {
-          router.push("/builder/new");
+        let data = await loadPage(siteId);
+
+        // Auto-generate Retail Core template if page doesn't exist
+        if (!data) {
+          data = generatePageFromOnboarding({
+            storeName: siteId.replace(/-/g, " "),
+            businessType: "retail",
+            designStyle: "modern-commerce",
+          });
+          await savePage(siteId, data);
         }
+
+        setPageData(data);
       } catch (error) {
         console.error("Failed to load page:", error);
       } finally {
@@ -43,7 +51,7 @@ export default function SiteEditor() {
   useEffect(() => {
     async function loadConfig() {
       if (!pageData) return;
-      
+
       try {
         const cfg = await createEdgePuckConfig({
           templateFamily: pageData.root.templateFamily || "retail-core",
@@ -61,7 +69,7 @@ export default function SiteEditor() {
 
   const handleSave = async (data: any) => {
     if (!pageData || !siteId || typeof siteId !== "string") return;
-    
+
     setSaving(true);
     try {
       const updatedPage: NormalizedPage = {
@@ -73,7 +81,7 @@ export default function SiteEditor() {
           order: item.props.order || 0,
         })),
       };
-      
+
       await savePage(siteId, updatedPage);
       setPageData(updatedPage);
     } catch (error) {
@@ -86,7 +94,7 @@ export default function SiteEditor() {
 
   const handlePublish = async (data: any) => {
     if (!pageData || !siteId || typeof siteId !== "string") return;
-    
+
     setPublishing(true);
     try {
       const pageToPublish: NormalizedPage = {
@@ -98,15 +106,14 @@ export default function SiteEditor() {
           order: item.props.order || 0,
         })),
       };
-      
+
       const result = await publishPage(
         siteId,
         pageToPublish.root,
         pageToPublish.content
       );
-      
+
       if (result.success) {
-        // Redirect to inventory page (per user funnel: editor → inventory → checkout → launch)
         router.push(`/inventory/${siteId}`);
       } else {
         alert(`Publish failed: ${result.errors?.join(", ")}`);
@@ -120,11 +127,11 @@ export default function SiteEditor() {
   };
 
   if (loading || configLoading) {
-    return <div className="p-8 text-center">Loading editor...</div>;
+    return <div style={{ padding: "32px", textAlign: "center" }}>Loading editor...</div>;
   }
 
   if (!pageData || !config || !siteId) {
-    return <div className="p-8 text-center">Editor not available. <a href="/builder/new">Create a store</a></div>;
+    return <div style={{ padding: "32px", textAlign: "center" }}>Editor not available.</div>;
   }
 
   const puckData = {
@@ -136,25 +143,46 @@ export default function SiteEditor() {
   };
 
   return (
-    <div style={{ height: "100vh" }} className="relative">
-      <div className="absolute top-4 right-4 z-10 flex gap-3">
+    <div style={{ height: "100vh", position: "relative" }}>
+      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10, display: "flex", gap: "12px" }}>
         <button
           onClick={() => handleSave(puckData)}
           disabled={saving}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+          style={{
+            padding: "8px 16px",
+            background: "#f3f4f6",
+            border: "1px solid #d1d5db",
+            borderRadius: "4px",
+            cursor: saving ? "not-allowed" : "pointer",
+            opacity: saving ? 0.5 : 1,
+          }}
         >
           {saving ? "Saving..." : "Save Draft"}
         </button>
         <button
           onClick={() => handlePublish(puckData)}
           disabled={publishing}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          style={{
+            padding: "8px 16px",
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: publishing ? "not-allowed" : "pointer",
+            opacity: publishing ? 0.5 : 1,
+          }}
         >
           {publishing ? "Publishing..." : "Publish"}
         </button>
         <a
           href={`/storefront/${siteId}?preview=1`}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          style={{
+            padding: "8px 16px",
+            background: "#16a34a",
+            color: "white",
+            borderRadius: "4px",
+            textDecoration: "none",
+          }}
         >
           Preview
         </a>
