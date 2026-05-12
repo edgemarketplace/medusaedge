@@ -19,7 +19,6 @@ export default function SiteEditor() {
   const [configLoading, setConfigLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     if (!siteId || typeof siteId !== "string") return;
@@ -64,7 +63,6 @@ export default function SiteEditor() {
     if (!pageData || !siteId || typeof siteId !== "string") return;
     
     setSaving(true);
-    setSaveMessage("");
     try {
       const updatedPage: NormalizedPage = {
         root: data.root.props,
@@ -78,8 +76,6 @@ export default function SiteEditor() {
       
       await savePage(siteId, updatedPage);
       setPageData(updatedPage);
-      setSaveMessage("Draft saved!");
-      setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
       console.error("Save failed:", error);
       alert("Draft save failed. Check console.");
@@ -110,7 +106,7 @@ export default function SiteEditor() {
       );
       
       if (result.success) {
-        // REDIRECT TO INVENTORY (not storefront) - per user funnel
+        // Redirect to inventory page (per user funnel: editor → inventory → checkout → launch)
         router.push(`/inventory/${siteId}`);
       } else {
         alert(`Publish failed: ${result.errors?.join(", ")}`);
@@ -124,31 +120,11 @@ export default function SiteEditor() {
   };
 
   if (loading || configLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading editor...</p>
-        </div>
-      </div>
-    );
+    return <div className="p-8 text-center">Loading editor...</div>;
   }
 
   if (!pageData || !config || !siteId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full text-center p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Editor Not Available</h1>
-          <p className="text-gray-600 mb-6">No draft found. Create a store to get started.</p>
-          <a
-            href="/builder/new"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-          >
-            Create New Store
-          </a>
-        </div>
-      </div>
-    );
+    return <div className="p-8 text-center">Editor not available. <a href="/builder/new">Create a store</a></div>;
   }
 
   const puckData = {
@@ -160,74 +136,35 @@ export default function SiteEditor() {
   };
 
   return (
-    <div style={{ height: "100vh" }} className="relative bg-gray-50">
-      {/* Top toolbar - professional gradient */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Left: Brand + Site Name */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-sm">
-                EM
-              </div>
-              <span className="font-semibold">{pageData.root.siteName || "Untitled Store"}</span>
-            </div>
-            <span className="text-gray-400">|</span>
-            <span className="text-sm text-gray-300">
-              {pageData.root.businessType || "retail"} • {pageData.root.templateFamily || "retail-core"}
-            </span>
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3">
-            {saveMessage && (
-              <span className="text-sm text-green-400 animate-fade-in">{saveMessage}</span>
-            )}
-            
-            <button
-              onClick={() => handleSave(puckData)}
-              disabled={saving}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50 text-sm font-medium transition-colors"
-            >
-              {saving ? "Saving..." : "Save Draft"}
-            </button>
-            
-            <button
-              onClick={() => handlePublish(puckData)}
-              disabled={publishing}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 text-sm font-bold transition-colors shadow-lg shadow-blue-500/25"
-            >
-              {publishing ? "Publishing..." : "🚀 Publish & Continue"}
-            </button>
-            
-            <a
-              href={`/storefront/${siteId}?preview=1`}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
-            >
-              👁 Preview
-            </a>
-            
-            <button
-              onClick={() => router.push("/builder/new")}
-              className="px-4 py-2 border border-gray-600 hover:border-gray-500 rounded-lg text-sm font-medium transition-colors"
-            >
-              ← Back
-            </button>
-          </div>
-        </div>
+    <div style={{ height: "100vh" }} className="relative">
+      <div className="absolute top-4 right-4 z-10 flex gap-3">
+        <button
+          onClick={() => handleSave(puckData)}
+          disabled={saving}
+          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Draft"}
+        </button>
+        <button
+          onClick={() => handlePublish(puckData)}
+          disabled={publishing}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {publishing ? "Publishing..." : "Publish"}
+        </button>
+        <a
+          href={`/storefront/${siteId}?preview=1`}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+          Preview
+        </a>
       </div>
 
-      {/* Puck Editor - with top padding for toolbar */}
-      <div style={{ paddingTop: "60px", height: "100%" }}>
-        <Puck
-          config={config}
-          data={puckData}
-          onPublish={(data) => handlePublish(data)}
-          onChange={(data) => {
-            // Optional: debounced autosave
-          }}
-        />
-      </div>
+      <Puck
+        config={config}
+        data={puckData}
+        onPublish={(data) => handlePublish(data)}
+      />
     </div>
   );
 }
