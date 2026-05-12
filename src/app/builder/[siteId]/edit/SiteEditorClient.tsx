@@ -135,7 +135,7 @@ export default function SiteEditorClient() {
       }
 
       alert("Published successfully!");
-      window.location.href = `/storefront/${params.siteId}`;
+      window.location.href = `/inventory/${params.siteId}`;
     } catch (error) {
       console.error("Publish failed:", error);
       alert("Publish saved locally, but remote persistence failed. Check console.");

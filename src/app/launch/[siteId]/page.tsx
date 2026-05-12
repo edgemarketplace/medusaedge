@@ -4,10 +4,8 @@
  * Shows captured checkout intent and allows store owner to deploy live.
  */
 
-import { loadPageRecord } from "packages/edge-templates/supabase-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 
 interface LaunchPageProps {
   params: {
@@ -22,19 +20,26 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
   const { siteId } = params;
   const checkoutIntentId = searchParams.checkout_intent;
   
-  // Load site data
-  const page = await loadPageRecord(siteId, "home");
-  if (!page?.puck_data) {
-    redirect("/404");
+  // Load site data with error handling
+  let siteName = "Your Store";
+  try {
+    const { loadPageRecord } = await import("packages/edge-templates/supabase-service");
+    const page = await loadPageRecord(siteId, "home");
+    
+    if (page?.puck_data) {
+      const rootProps = (page.puck_data as any)?.root?.props || {};
+      siteName = rootProps.siteName || "Your Store";
+    }
+  } catch (error) {
+    console.error("Failed to load page record:", error);
+    // Continue with default siteName
   }
 
-  const rootProps = (page.puck_data as any)?.root?.props || {};
-  const siteName = rootProps.siteName || "Your Store";
-
-  // Load checkout intent if provided (safe Supabase call)
-  let checkoutIntent = null;
+  // Load checkout intent if provided
+  let checkoutIntent: any = null;
   if (checkoutIntentId) {
     try {
+      const { createClient } = await import("@supabase/supabase-js");
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       
@@ -57,8 +62,8 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={`/storefront/${siteId}`} className="text-gray-600 hover:text-gray-900">
-            ← Back to Store
+          <Link href={`/inventory/${siteId}`} className="text-gray-600 hover:text-gray-900">
+            ← Back to Inventory
           </Link>
           <h1 className="text-xl font-semibold">Launch {siteName}</h1>
           <div className="w-24" />
@@ -76,7 +81,7 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
             </div>
             <h2 className="text-2xl font-bold mb-2">Ready to Launch!</h2>
             <p className="text-gray-600">
-              Your order request has been received. Deploy your live store now.
+              Your store is ready. Deploy your live store now.
             </p>
           </div>
 
@@ -111,7 +116,6 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
           <div className="space-y-4">
             <button
               onClick={() => {
-                // Call deploy API
                 fetch("/api/deploy-storefront", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -133,10 +137,10 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
             </button>
 
             <Link
-              href={`/storefront/${siteId}`}
+              href={`/inventory/${siteId}`}
               className="block text-center text-gray-600 hover:text-gray-900"
             >
-              Return to Store Preview
+              Back to Inventory
             </Link>
           </div>
         </div>
