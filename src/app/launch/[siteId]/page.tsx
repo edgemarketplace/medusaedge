@@ -14,10 +14,10 @@ interface CheckoutIntent {
 
 export default function LaunchPage() {
   const params = useParams<{ siteId: string }>();
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const siteId = params.siteId;
-  const checkoutIntentId = searchParams.get("checkout_intent");
+  const checkoutIntentId = searchParams?.get("checkout_intent");
   
   const [siteName, setSiteName] = useState("Your Store");
   const [checkoutIntent, setCheckoutIntent] = useState<CheckoutIntent | null>(null);
