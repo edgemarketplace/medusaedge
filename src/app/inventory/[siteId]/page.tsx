@@ -24,12 +24,17 @@ export default function InventoryPage({ params }: InventoryPageProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showAIGenerate, setShowAIGenerate] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
     description: "",
     image: "",
   });
+  const [aiDescription, setAiDescription] = useState("");
+  const [aiBusinessType, setAiBusinessType] = useState("retail");
+  const [error, setError] = useState("");
 
   // Load products from API
   useEffect(() => {
@@ -51,6 +56,7 @@ export default function InventoryPage({ params }: InventoryPageProps) {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     try {
       const res = await fetch("/api/inventory", {
@@ -70,7 +76,7 @@ export default function InventoryPage({ params }: InventoryPageProps) {
       setShowAddForm(false);
       loadProducts();
     } catch (error: any) {
-      alert(error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -89,6 +95,100 @@ export default function InventoryPage({ params }: InventoryPageProps) {
       }
     } catch (error) {
       console.error("Failed to delete product:", error);
+    }
+  };
+
+  const handleCSVImport = async () => {
+    if (!csvFile) {
+      setError("Please select a CSV file");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const text = await csvFile.text();
+      const lines = text.split("\n").filter(line => line.trim());
+      
+      // Parse CSV (simple parse, assuming header row: name,price,description,image)
+      const products = lines.slice(1).map(line => {
+        const [name, price, description, image] = line.split(",").map(s => s.trim().replace(/^"|"$/g, ""));
+        return { name, price, description, image };
+      }).filter(p => p.name && p.price);
+
+      if (products.length === 0) {
+        throw new Error("No valid products found in CSV");
+      }
+
+      const res = await fetch("/api/inventory/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId, products }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to import products");
+      }
+
+      setCsvFile(null);
+      setShowAddForm(false);
+      loadProducts();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAIGenerate = async () => {
+    if (!aiDescription) {
+      setError("Please enter a business description");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/ai-generate-products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteId,
+          businessDescription: aiDescription,
+          businessType: aiBusinessType,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to generate products");
+      }
+
+      const data = await res.json();
+      
+      if (!data.products || data.products.length === 0) {
+        throw new Error("No products generated");
+      }
+
+      // Import generated products
+      const bulkRes = await fetch("/api/inventory/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId, products: data.products }),
+      });
+
+      if (!bulkRes.ok) {
+        throw new Error("Failed to import generated products");
+      }
+
+      setAiDescription("");
+      setShowAIGenerate(false);
+      loadProducts();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,16 +211,93 @@ export default function InventoryPage({ params }: InventoryPageProps) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Add Product Button */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Products ({products.length})</h2>
+        {/* Action Buttons */}
+        <div className="mb-6 flex flex-wrap gap-3">
           <button
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => {
+              setShowAddForm(!showAddForm);
+              setShowAIGenerate(false);
+            }}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
             {showAddForm ? "Cancel" : "+ Add Product"}
           </button>
+          
+          <button
+            onClick={() => {
+              setShowAIGenerate(!showAIGenerate);
+              setShowAddForm(false);
+            }}
+            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+          >
+            {showAIGenerate ? "Cancel" : " AI Generate Products"}
+          </button>
+
+          <label className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 cursor-pointer">
+             Import CSV
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          {csvFile && (
+            <button
+              onClick={handleCSVImport}
+              disabled={loading}
+              className="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-800 disabled:bg-gray-400"
+            >
+              {loading ? "Importing..." : " Confirm Import"}
+            </button>
+          )}
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+            {error}
+          </div>
+        )}
+
+        {/* AI Generate Form */}
+        {showAIGenerate && (
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">AI Product Generation</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Business Description *</label>
+                <textarea
+                  value={aiDescription}
+                  onChange={(e) => setAiDescription(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                  rows={4}
+                  placeholder="Describe your business (e.g., We sell handmade leather goods, custom apparel, tech gadgets...)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Business Type</label>
+                <select
+                  value={aiBusinessType}
+                  onChange={(e) => setAiBusinessType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="retail">Retail</option>
+                  <option value="services">Services</option>
+                  <option value="food">Food & Beverage</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <button
+                onClick={handleAIGenerate}
+                disabled={loading || !aiDescription}
+                className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:bg-gray-400"
+              >
+                {loading ? "Generating..." : " Generate & Import Products"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Add Product Form */}
         {showAddForm && (
@@ -183,7 +360,7 @@ export default function InventoryPage({ params }: InventoryPageProps) {
         {/* Products Grid */}
         {products.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No products yet. Add your first product!</p>
+            <p className="text-gray-500 mb-4">No products yet. Add products manually, import CSV, or use AI generation!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -9,10 +9,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 interface LaunchPageProps {
   params: {
     siteId: string;
@@ -35,15 +31,25 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
   const rootProps = (page.puck_data as any)?.root?.props || {};
   const siteName = rootProps.siteName || "Your Store";
 
-  // Load checkout intent if provided
+  // Load checkout intent if provided (safe Supabase call)
   let checkoutIntent = null;
   if (checkoutIntentId) {
-    const { data } = await supabase
-      .from("checkout_intents")
-      .select("*")
-      .eq("id", checkoutIntentId)
-      .single();
-    checkoutIntent = data;
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data } = await supabase
+          .from("checkout_intents")
+          .select("*")
+          .eq("id", checkoutIntentId)
+          .single();
+        checkoutIntent = data;
+      }
+    } catch (error) {
+      console.error("Failed to load checkout intent:", error);
+    }
   }
 
   return (
@@ -116,6 +122,9 @@ export default async function LaunchPage({ params, searchParams }: LaunchPagePro
                   }),
                 }).then(() => {
                   window.location.href = `/storefront/${siteId}`;
+                }).catch((err) => {
+                  console.error("Deploy failed:", err);
+                  alert("Deploy failed. Please try again.");
                 });
               }}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-md font-medium hover:bg-blue-700"
