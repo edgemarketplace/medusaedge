@@ -1,212 +1,114 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
-
-const SUPABASE_URL = "https://nzxedlagqtzadyrmgkhq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_mAG0Ncil8LY4Ls-LcBUCUw_k_br_aI6";
-
-interface InventoryItem {
-  id?: string;
-  site_id?: number;
-  title: string;
-  description?: string;
-  price: number;
-  compare_at_price?: number;
-  sku?: string;
-  inventory_quantity?: number;
-  images?: string[];
-  medusa_product_id?: string;
-  status?: string;
-  metadata?: Record<string, any>;
-}
-
 /**
- * GET /api/inventory?site_id=123
- * List inventory items for a site
+ * Inventory API - Manage products for a site
+ * 
+ * GET /api/inventory?siteId=xxx - List products
+ * POST /api/inventory - Add product
+ * DELETE /api/inventory?id=xxx&siteId=xxx - Delete product
  */
-export async function GET(req: NextRequest) {
+
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const siteId = searchParams.get('site_id');
-    const intakeId = searchParams.get('intake_id');
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get("siteId");
 
-    let url = `${SUPABASE_URL}/rest/v1/marketplace_inventory?select=*`;
-    if (siteId) {
-      url += `&site_id=eq.${siteId}`;
-    }
-    if (intakeId) {
-      // Join with marketplace_sites to get site by intake_id
-      url = `${SUPABASE_URL}/rest/v1/marketplace_inventory?select=*,marketplace_sites!inner(*)&marketplace_sites.intake_id=eq.${intakeId}`;
+    if (!siteId) {
+      return NextResponse.json({ error: "Missing siteId" }, { status: 400 });
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
+    const { data, error } = await supabase
+      .from("inventory")
+      .select("*")
+      .eq("site_id", siteId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      if (error.code === "42P01") {
+        return NextResponse.json({ products: [] });
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Supabase error: ${response.statusText}`);
+      throw error;
     }
 
-    const items = await response.json();
-    return NextResponse.json({ success: true, items });
-  } catch (error) {
+    return NextResponse.json({ products: data || [] });
+  } catch (error: any) {
     console.error("Inventory GET error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch inventory" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-/**
- * POST /api/inventory
- * Create new inventory item(s)
- * Body: single item or array of items
- */
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const items: InventoryItem[] = Array.isArray(body) ? body : [body];
+    const body = await request.json();
+    const { siteId, name, price, description, image } = body;
 
-    // Validate required fields
-    for (const item of items) {
-      if (!item.title || item.price === undefined) {
+    if (!siteId || !name || !price) {
+      return NextResponse.json(
+        { error: "Missing required fields: siteId, name, price" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("inventory")
+      .insert([
+        {
+          site_id: siteId,
+          name,
+          price,
+          description: description || null,
+          image: image || null,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "42P01") {
         return NextResponse.json(
-          { error: "Title and price are required" },
-          { status: 400 }
+          { error: "Inventory table not found. Please run migration." },
+          { status: 500 }
         );
       }
+      throw error;
     }
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_inventory`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify(items.map(item => ({
-        site_id: item.site_id,
-        title: item.title,
-        description: item.description || null,
-        price: item.price,
-        compare_at_price: item.compare_at_price || null,
-        sku: item.sku || `SKU-${createHash('md5').update(item.title).digest('hex').slice(0, 8)}`,
-        inventory_quantity: item.inventory_quantity || 0,
-        images: item.images || [],
-        medusa_product_id: item.medusa_product_id || null,
-        status: item.status || 'active',
-        metadata: item.metadata || {}
-      })))
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Supabase error: ${errorText}`);
-    }
-
-    const newItems = await response.json();
-    return NextResponse.json({ success: true, items: newItems });
-  } catch (error) {
+    return NextResponse.json({ success: true, product: data });
+  } catch (error: any) {
     console.error("Inventory POST error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create inventory items" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-/**
- * PATCH /api/inventory?id=123
- * Update inventory item
- */
-export async function PATCH(req: NextRequest) {
+export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    const siteId = searchParams.get("siteId");
+
+    if (!id || !siteId) {
+      return NextResponse.json({ error: "Missing id or siteId" }, { status: 400 });
     }
 
-    const body = await req.json();
-    const updateData: Record<string, any> = {};
+    const { error } = await supabase
+      .from("inventory")
+      .delete()
+      .eq("id", id)
+      .eq("site_id", siteId);
 
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.price !== undefined) updateData.price = body.price;
-    if (body.compare_at_price !== undefined) updateData.compare_at_price = body.compare_at_price;
-    if (body.inventory_quantity !== undefined) updateData.inventory_quantity = body.inventory_quantity;
-    if (body.images !== undefined) updateData.images = body.images;
-    if (body.status !== undefined) updateData.status = body.status;
-    if (body.metadata !== undefined) updateData.metadata = body.metadata;
+    if (error) throw error;
 
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/marketplace_inventory?id=eq.${id}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(updateData)
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Supabase error: ${response.statusText}`);
-    }
-
-    const updatedItems = await response.json();
-    return NextResponse.json({ success: true, item: updatedItems[0] });
-  } catch (error) {
-    console.error("Inventory PATCH error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update inventory item" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/inventory?id=123
- * Delete inventory item
- */
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/marketplace_inventory?id=eq.${id}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-        }
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Supabase error: ${response.statusText}`);
-    }
-
-    return NextResponse.json({ success: true, message: "Item deleted" });
-  } catch (error) {
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
     console.error("Inventory DELETE error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete inventory item" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const dynamic = "force-dynamic";

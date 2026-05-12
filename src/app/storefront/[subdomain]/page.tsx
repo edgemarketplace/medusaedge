@@ -73,9 +73,14 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No content available</h1>
           {isPreviewMode && (
-            <Link href={`/builder/${subdomain}/edit`} className="text-blue-600 hover:underline">
-              ← Edit Store
-            </Link>
+            <div className="space-y-2">
+              <Link href={`/builder/${subdomain}/edit`} className="block text-blue-600 hover:underline">
+                ← Edit Store
+              </Link>
+              <Link href={`/inventory/${subdomain}`} className="block text-blue-600 hover:underline">
+                → Add Inventory
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -84,14 +89,20 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
 
   return (
     <div className="storefront" data-template={rootProps.templateFamily || "retail-core"}>
-      {/* Edit button - ONLY visible in preview mode */}
+      {/* Preview mode controls - ONLY visible in preview mode */}
       {isPreviewMode && (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          <Link
+            href={`/inventory/${subdomain}`}
+            className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
+          >
+            + Inventory
+          </Link>
           <Link
             href={`/builder/${subdomain}/edit`}
             className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
           >
-            ← Edit Store (Preview Mode)
+            ← Edit Store
           </Link>
         </div>
       )}
@@ -106,7 +117,7 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
         }
 
         // Merge root props (theme, etc.) with block props
-        // Inject checkout URL for CTAs
+        // Inject checkoutUrl for CTAs
         const mergedProps = {
           ...block.props,
           theme: rootProps.theme,
