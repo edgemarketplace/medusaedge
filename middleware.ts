@@ -14,10 +14,10 @@ export function middleware(request: NextRequest) {
   ) {
     const response = NextResponse.next();
     
-    // CSP header for Puck editor (allows unsafe-eval required by Puck)
+    // CSP header for Puck editor (allows unsafe-eval and styles from any source for iframes)
     response.headers.set(
       "Content-Security-Policy",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https: data:; connect-src 'self' https:;"
     );
     
     return response;
