@@ -1,182 +1,173 @@
-import React from "react";
-import { getPreset } from "../edge-theme";
-import type { TemplateFamily, BusinessType, EdgeRootProps } from "../edge-theme/types";
-import retailCoreManifest from "./retailCoreManifest";
+/**
+ * Puck Config Factory - Simplified Version
+ * 
+ * Generates Puck editor config based on template family.
+ */
 
-// Lazy component registry — components are loaded only when createEdgePuckConfig is called
-// This prevents webpack from pulling in ALL sections at import time
-async function buildComponentRegistry() {
-  const [
-    { CommerceHeader, commerceHeaderMeta },
-    { PromoHeader, promoHeaderMeta },
-    { ProductHero, productHeroMeta },
-    { FeaturedCollection, featuredCollectionMeta },
-    { ProductGrid, productGridMeta },
-    { ReviewStrip, reviewStripMeta },
-    { FAQ, faqMeta },
-    { CommerceFooter, commerceFooterMeta },
-  ] = await Promise.all([
-    import("../edge-sections/headers/CommerceHeader"),
-    import("../edge-sections/headers/PromoHeader"),
-    import("../edge-sections/heroes/ProductHero"),
-    import("../edge-sections/commerce/FeaturedCollection"),
-    import("../edge-sections/commerce/ProductGrid"),
-    import("../edge-sections/proof/ReviewStrip"),
-    import("../edge-sections/conversion/FAQ"),
-    import("../edge-sections/footers/CommerceFooter"),
-  ]);
+import type { EdgeRootProps } from "./types";
+import { allSectionMetas } from "../edge-sections/section-meta";
 
-  return {
-    CommerceHeader: {
-      Component: CommerceHeader,
-      meta: commerceHeaderMeta,
-      schema: {
-        siteName: { type: "text", label: "Site Name" },
-        logoUrl: { type: "text", label: "Logo URL" },
-        primaryCtaLabel: { type: "text", label: "Primary CTA Label" },
-        primaryCtaHref: { type: "text", label: "Primary CTA Link" },
-      },
+// Import section components
+import { SimpleHeader } from "../edge-sections/headers/SimpleHeader";
+import { PromoHeader } from "../edge-sections/headers/PromoHeader";
+import { CommerceHeader } from "../edge-sections/headers/CommerceHeader";
+import { ProductHero } from "../edge-sections/heroes/ProductHero";
+import { ServiceHero } from "../edge-sections/heroes/ServiceHero";
+import { SplitHero } from "../edge-sections/heroes/SplitHero";
+import { VisualHero } from "../edge-sections/heroes/VisualHero";
+import { FeaturedCollection } from "../edge-sections/commerce/FeaturedCollection";
+import { ProductGrid } from "../edge-sections/commerce/ProductGrid";
+import { ServiceCards } from "../edge-sections/services/ServiceCards";
+import { PricingTiers } from "../edge-sections/services/PricingTiers";
+import { QuoteCTA } from "../edge-sections/services/QuoteCTA";
+import { Testimonials } from "../edge-sections/proof/Testimonials";
+import { ReviewStrip } from "../edge-sections/proof/ReviewStrip";
+import { FAQ } from "../edge-sections/conversion/FAQ";
+import { BasicFooter } from "../edge-sections/footers/BasicFooter";
+import { CommerceFooter } from "../edge-sections/footers/CommerceFooter";
+import { ServiceFooter } from "../edge-sections/footers/ServiceFooter";
+
+const componentMap: Record<string, any> = {
+  SimpleHeader,
+  PromoHeader,
+  CommerceHeader,
+  ProductHero,
+  ServiceHero,
+  SplitHero,
+  VisualHero,
+  FeaturedCollection,
+  ProductGrid,
+  ServiceCards,
+  PricingTiers,
+  QuoteCTA,
+  Testimonials,
+  ReviewStrip,
+  FAQ,
+  BasicFooter,
+  CommerceFooter,
+  ServiceFooter,
+};
+
+// Root config fields (no JSX render function for now)
+const edgeRootConfig = {
+  fields: {
+    siteName: { type: "text", label: "Site Name" },
+    siteTagline: { type: "text", label: "Tagline" },
+    businessType: {
+      type: "select",
+      label: "Business Type",
+      options: [
+        { label: "Retail", value: "retail" },
+        { label: "Service", value: "service" },
+        { label: "Food & Beverage", value: "food" },
+        { label: "Artisan/Creative", value: "artisan" },
+        { label: "Event/Floral", value: "event" },
+      ],
     },
-    PromoHeader: {
-      Component: PromoHeader,
-      meta: promoHeaderMeta,
-      schema: {
-        message: { type: "text", label: "Promo Message" },
-        ctaLabel: { type: "text", label: "CTA Label" },
-        ctaHref: { type: "text", label: "CTA Link" },
-      },
+    templateFamily: {
+      type: "select",
+      label: "Template",
+      options: [
+        { label: "Retail Core", value: "retail-core" },
+        { label: "Service Pro", value: "service-pro" },
+        { label: "Food & Catering", value: "food-catering" },
+        { label: "Artisan Market", value: "artisan-market" },
+        { label: "Event & Floral", value: "event-floral" },
+      ],
     },
-    ProductHero: {
-      Component: ProductHero,
-      meta: productHeroMeta,
-      schema: {
-        headline: { type: "text", label: "Headline" },
-        subheadline: { type: "text", label: "Subheadline" },
-        ctaLabel: { type: "text", label: "CTA Label" },
-        ctaHref: { type: "text", label: "CTA Link" },
-        backgroundImage: { type: "text", label: "Background Image URL" },
-      },
+    stylePreset: {
+      type: "select",
+      label: "Style Preset",
+      options: [
+        { label: "Modern Commerce", value: "modern-commerce" },
+        { label: "Boutique Luxury", value: "boutique-luxury" },
+        { label: "Professional Agency", value: "professional-agency" },
+        { label: "Industrial Supply", value: "industrial-supply" },
+        { label: "Creative Studio", value: "creative-studio" },
+        { label: "Tech Consultant", value: "tech-consultant" },
+      ],
     },
-    FeaturedCollection: {
-      Component: FeaturedCollection,
-      meta: featuredCollectionMeta,
-      schema: {
-        title: { type: "text", label: "Section Title" },
-      },
+    logoUrl: { type: "text", label: "Logo URL" },
+    primaryCtaLabel: { type: "text", label: "Primary CTA Label" },
+    supportPhone: { type: "text", label: "Support Phone" },
+    supportEmail: { type: "text", label: "Support Email" },
+    checkoutMode: {
+      type: "select",
+      label: "Checkout Mode",
+      options: [
+        { label: "Native Checkout", value: "native" },
+        { label: "Stripe Link", value: "stripe-link" },
+        { label: "Payment Link", value: "payment-link" },
+        { label: "Quote Only", value: "quote-only" },
+      ],
     },
-    ProductGrid: {
-      Component: ProductGrid,
-      meta: productGridMeta,
-      schema: {
-        title: { type: "text", label: "Section Title" },
-        columns: { type: "number", label: "Columns" },
-      },
-    },
-    ReviewStrip: {
-      Component: ReviewStrip,
-      meta: reviewStripMeta,
-      schema: {}, // Reviews passed as prop
-    },
-    FAQ: {
-      Component: FAQ,
-      meta: faqMeta,
-      schema: {
-        title: { type: "text", label: "Section Title" },
-      },
-    },
-    CommerceFooter: {
-      Component: CommerceFooter,
-      meta: commerceFooterMeta,
-      schema: {
-        siteName: { type: "text", label: "Site Name" },
-        description: { type: "text", label: "Footer Description" },
-      },
-    },
+    currency: { type: "text", label: "Currency" },
+    locale: { type: "text", label: "Locale" },
+    seoTitle: { type: "text", label: "SEO Title" },
+    seoDescription: { type: "textarea", label: "SEO Description" },
+  },
+};
+
+function getAllowedSections(templateFamily: EdgeRootProps["templateFamily"]): string[] {
+  const businessTypeMap: Record<string, string> = {
+    "retail-core": "retail",
+    "service-pro": "service",
+    "food-catering": "food",
+    "artisan-market": "artisan",
+    "event-floral": "event",
   };
+
+  const businessType = businessTypeMap[templateFamily] as EdgeRootProps["businessType"];
+  
+  return allSectionMetas
+    .filter(meta => meta.verticals.includes(businessType))
+    .map(meta => meta.variation);
+}
+
+function getSectionCategories(businessType: EdgeRootProps["businessType"]) {
+  const categories: Record<string, { components: string[]; title: string }> = {
+    headers: { title: "Headers", components: [] },
+    heroes: { title: "Hero Sections", components: [] },
+    commerce: { title: "Commerce", components: [] },
+    services: { title: "Services", components: [] },
+    story: { title: "Story & About", components: [] },
+    proof: { title: "Social Proof", components: [] },
+    media: { title: "Media & Gallery", components: [] },
+    conversion: { title: "Conversion", components: [] },
+    footers: { title: "Footers", components: [] },
+  };
+
+  allSectionMetas
+    .filter(meta => meta.verticals.includes(businessType))
+    .forEach(meta => {
+      if (categories[meta.category]) {
+        categories[meta.category].components.push(meta.variation);
+      }
+    });
+
+  return Object.values(categories).filter(cat => cat.components.length > 0);
+}
+
+function filterComponents(allowed: string[]): Record<string, any> {
+  const filtered: Record<string, any> = {};
+  allowed.forEach(name => {
+    if (componentMap[name]) {
+      filtered[name] = componentMap[name];
+    }
+  });
+  return filtered;
 }
 
 export async function createEdgePuckConfig(ctx: {
-  templateFamily: TemplateFamily;
-  businessType: BusinessType;
+  templateFamily: EdgeRootProps["templateFamily"];
+  businessType: EdgeRootProps["businessType"];
   adminMode?: boolean;
-  stylePreset?: string;
-}) {
-  // Get manifest for template family (start with retail-core)
-  const manifest = retailCoreManifest; // Expand later for other families
-  const allowedSections = new Set(manifest.allowedSections);
-  const theme = getPreset(ctx.stylePreset || manifest.defaultRootProps.stylePreset || "modern-commerce");
-
-  // Build component registry lazily (only when this function is called)
-  const componentRegistry = await buildComponentRegistry();
-
-  // Filter components to allowed sections
-  const components: Record<string, any> = {};
-  const categories: Record<string, string[]> = {};
-
-  Object.entries(componentRegistry).forEach(([name, entry]) => {
-    if (!allowedSections.has(name)) return;
-
-    // Build Puck component config
-    components[name] = {
-      fields: entry.schema,
-      render: (props: any) => React.createElement(entry.Component, { ...props, theme }),
-      label: name,
-      category: entry.meta.category,
-    };
-
-    // Group by category
-    const cat = entry.meta.category;
-    if (!categories[cat]) categories[cat] = [];
-    categories[cat].push(name);
-  });
-
-  // Root config for Puck (EdgeRootProps)
-  const rootConfig = {
-    fields: {
-      siteName: { type: "text", label: "Site Name" },
-      siteTagline: { type: "text", label: "Tagline" },
-      stylePreset: {
-        type: "select",
-        label: "Style Preset",
-        options: [
-          { label: "Modern Commerce", value: "modern-commerce" },
-          { label: "Boutique Luxury", value: "boutique-luxury" },
-          { label: "Professional Agency", value: "professional-agency" },
-          { label: "Industrial Supply", value: "industrial-supply" },
-          { label: "Creative Studio", value: "creative-studio" },
-          { label: "Tech Consultant", value: "tech-consultant" },
-        ],
-      },
-      businessType: {
-        type: "select",
-        label: "Business Type",
-        options: [
-          { label: "Retail", value: "retail" },
-          { label: "Service", value: "service" },
-        ],
-      },
-      checkoutMode: {
-        type: "select",
-        label: "Checkout Mode",
-        options: [
-          { label: "Native", value: "native" },
-          { label: "Stripe Link", value: "stripe-link" },
-          { label: "Payment Link", value: "payment-link" },
-          { label: "Quote Only", value: "quote-only" },
-        ],
-      },
-      currency: { type: "text", label: "Currency" },
-      locale: { type: "text", label: "Locale" },
-      supportEmail: { type: "text", label: "Support Email" },
-      supportPhone: { type: "text", label: "Support Phone" },
-      seoTitle: { type: "text", label: "SEO Title" },
-      seoDescription: { type: "textarea", label: "SEO Description" },
-    },
-  };
-
+}): Promise<any> {
+  const allowed = getAllowedSections(ctx.templateFamily);
+  
   return {
-    root: rootConfig,
-    categories,
-    components,
+    root: edgeRootConfig,
+    categories: getSectionCategories(ctx.businessType),
+    components: filterComponents(allowed),
   };
 }
